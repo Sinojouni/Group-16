@@ -1,0 +1,23 @@
+# Environment variables
+.env
+
+# Python
+*.py[cod]
+*$py.class
+__pycache__/
+
+# Django
+*.log
+*.pot
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Local development
+local_settings.py
