@@ -104,7 +104,7 @@ docker-compose.yml      # Defines and orchestrates all services (api, db, cache,
 
    # Email settings (console backend for development)
    EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
-   ```
+````
 
 ### **Running the Application**
 
