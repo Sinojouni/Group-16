@@ -126,17 +126,30 @@ docker-compose.yml      # Defines and orchestrates all services (api, db, cache,
 
 ### **Importing Movie Data**
 
-1. **Place the Data File:**
-   Put your cleaned movie dataset CSV file (e.g., `sampled_df.csv`) inside the `backend/` directory.
+1. **Download the Dataset:**
+   The sample dataset is available here:
+   [sampled_df.csv (Google Drive)](https://drive.google.com/file/d/1t2nYyr0bw-6JbrbMDOSDQfrrRF46qUyw/view?usp=drive_link)
+
+   Download it manually and place it inside your `backend/` directory.
+
+   ```
+   backend/
+   ├── sampled_df.csv
+   ├── manage.py
+   └── ...
+   ```
 
 2. **Run the Import Command:**
-   Execute the custom management command to load the movie data into the database.
 
    ```bash
    docker-compose exec api python manage.py import_movies sampled_df.csv
    ```
 
-The application should now be running and accessible at [http://localhost:8000](http://localhost:8000).
+   This loads the movie metadata into your PostgreSQL database.
+   Depending on file size, it may take a few minutes.
+
+The application should now be accessible at:
+[http://localhost:8000](http://localhost:8000)
 
 ## **Environment Variables**
 
