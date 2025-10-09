@@ -1,272 +1,167 @@
-Movie Recommendation System - Backend
+# **Movie Recommendation System \- Backend**
+
 This repository contains the backend service for a movie recommendation application. It is built with Django and Django REST Framework, providing a robust API for user management, movie data, and ratings. The system is designed to work alongside a separate FastAPI service that will host the machine learning recommendation model.
 
-Table of Contents
-Architecture Overview
+## **Table of Contents**
 
-Features
+* [Architecture Overview](https://www.google.com/search?q=%23architecture-overview)  
+* [Features](https://www.google.com/search?q=%23features)  
+* [Project Structure](https://www.google.com/search?q=%23project-structure)  
+* [Setup and Installation](https://www.google.com/search?q=%23setup-and-installation)  
+  * [Prerequisites](https://www.google.com/search?q=%23prerequisites)  
+  * [Configuration](https://www.google.com/search?q=%23configuration)  
+  * [Running the Application](https://www.google.com/search?q=%23running-the-application)  
+  * [Importing Movie Data](https://www.google.com/search?q=%23importing-movie-data)  
+* [Environment Variables](https://www.google.com/search?q=%23environment-variables)  
+* [API Endpoints](https://www.google.com/search?q=%23api-endpoints)  
+  * [Authentication](https://www.google.com/search?q=%23authentication)  
+  * [Users](https://www.google.com/search?q=%23users)  
+  * [Movies](https://www.google.com/search?q=%23movies)  
+  * [Ratings](https://www.google.com/search?q=%23ratings)
 
-Project Structure
+## **Architecture Overview**
 
-Setup and Installation
-
-Prerequisites
-
-Configuration
-
-Running the Application
-
-Importing Movie Data
-
-Environment Variables
-
-API Endpoints
-
-Authentication
-
-Users
-
-Movies
-
-Ratings
-
-Architecture Overview
 The backend is composed of two main services (one implemented, one planned):
 
-Django API Service (This Repository): A powerful backend responsible for:
+1. **Django API Service (This Repository):** A powerful backend responsible for:  
+   * User registration, authentication, and profile management.  
+   * Storing and serving movie metadata.  
+   * Collecting and managing user ratings for movies.  
+   * Securely handling all stateful operations and business logic.  
+2. **FastAPI Model Service (Planned):** A high-performance, stateless service dedicated to:  
+   * Wrapping the trained recommendation model.  
+   * Providing an endpoint to generate movie recommendations for users.  
+   * This service can be scaled independently to handle heavy inference loads.
 
-User registration, authentication, and profile management.
+## **Features**
 
-Storing and serving movie metadata.
+* **Robust Authentication:** Secure token-based authentication using JWT with HttpOnly cookies for refresh tokens to prevent XSS attacks. Includes CSRF protection.  
+* **User Management:** Full CRUD operations for users, email verification, and secure password reset functionality.  
+* **Social Login:** OAuth2 integration for Google login.  
+* **Movie Metadata API:** Endpoints to list all movies with pagination and sorting, and to retrieve detailed metadata for a specific movie.  
+* **Rating System:** Allows authenticated users to create, update, and view their movie ratings (0.5 to 5.0).  
+* **Interactive API Docs:** Automatic generation of a Swagger UI for easy testing and exploration of all endpoints.  
+* **Containerized:** Fully containerized with Docker and Docker Compose for easy setup and consistent development/production environments.  
+* **Asynchronous Tasks:** Uses Celery and Redis to handle background tasks like sending emails, ensuring fast API response times.  
+* **Security:** Includes brute-force attack prevention (django-axes) and modern password hashing (Argon2).
 
-Collecting and managing user ratings for movies.
+## **Project Structure**
 
-Securely handling all stateful operations and business logic.
+backend/  
+├── config/             \# Main project configuration (settings, urls)  
+├── movies/             \# App for movie metadata and browsing  
+│   └── management/  
+│       └── commands/  
+│           └── import\_movies.py \# Script to load movie data  
+├── ratings/            \# App for user ratings  
+├── users/              \# App for user management and authentication  
+├── Dockerfile          \# Instructions to build the Django API image  
+└── requirements.txt    \# Python dependencies  
+docker-compose.yml      \# Defines and orchestrates all services (api, db, cache, worker)
 
-FastAPI Model Service (Planned): A high-performance, stateless service dedicated to:
+## **Setup and Installation**
 
-Wrapping the trained recommendation model.
+### **Prerequisites**
 
-Providing an endpoint to generate movie recommendations for users.
+* [Docker](https://www.docker.com/get-started)  
+* [Docker Compose](https://docs.docker.com/compose/install/)
 
-This service can be scaled independently to handle heavy inference loads.
+### **Configuration**
 
-Features
-Robust Authentication: Secure token-based authentication using JWT with HttpOnly cookies for refresh tokens to prevent XSS attacks. Includes CSRF protection.
+1. **Clone the Repository:**  
+   git clone \<your-repository-url\>  
+   cd \<your-repository-folder\>
 
-User Management: Full CRUD operations for users, email verification, and secure password reset functionality.
+2. Create the Environment File:  
+   Inside the backend/ directory, create a file named .env and copy the contents from the example below. Modify the values as needed for your setup.  
+   \# .env file inside the 'backend' directory  
+   DJANGO\_SECRET\_KEY="a-strong-and-unique-secret-key-for-your-project"  
+   DJANGO\_DEBUG=True  
+   DJANGO\_ALLOWED\_HOSTS=localhost,127.0.0.1
 
-Social Login: OAuth2 integration for Google login.
+   \# Database Configuration (matches docker-compose.yml)  
+   DATABASE\_URL=postgres://recomendationuser:recomendationpass@db:5432/recomendation
 
-Movie Metadata API: Endpoints to list all movies with pagination and sorting, and to retrieve detailed metadata for a specific movie.
+   \# Cache Configuration (matches docker-compose.yml)  
+   REDIS\_URL=redis://cache:6379/0
 
-Rating System: Allows authenticated users to create, update, and view their movie ratings (0.5 to 5.0).
+   \# Frontend URL for constructing links in emails  
+   FRONTEND\_URL=http://localhost:5173  
+   CORS\_ALLOWED\_ORIGINS=http://localhost:5173,\[http://127.0.0.1:5173\](http://127.0.0.1:5173)
 
-Interactive API Docs: Automatic generation of a Swagger UI for easy testing and exploration of all endpoints.
+   \# Google OAuth2 Credentials  
+   GOOGLE\_CLIENT\_ID="your-google-client-id.apps.googleusercontent.com"  
+   GOOGLE\_CLIENT\_SECRET="your-google-client-secret"
 
-Containerized: Fully containerized with Docker and Docker Compose for easy setup and consistent development/production environments.
+   \# Email settings (console backend for development)  
+   EMAIL\_BACKEND=django.core.mail.backends.console.EmailBackend
 
-Asynchronous Tasks: Uses Celery and Redis to handle background tasks like sending emails, ensuring fast API response times.
+### **Running the Application**
 
-Security: Includes brute-force attack prevention (django-axes) and modern password hashing (Argon2).
+1. Build and Start Services:  
+   From the root directory (where docker-compose.yml is located), run:  
+   docker-compose up \--build \-d
 
-Project Structure
-.
-├── backend/
-│   ├── config/             # Main project configuration (settings, urls)
-│   ├── movies/             # App for movie metadata and browsing
-│   │   └── management/
-│   │       └── commands/
-│   │           └── import_movies.py # Script to load movie data
-│   ├── ratings/            # App for user ratings
-│   ├── users/              # App for user management and authentication
-│   ├── .env                # Local environment variables (you create this)
-│   ├── Dockerfile          # Instructions to build the Django API image
-│   └── requirements.txt    # Python dependencies
-└── docker-compose.yml      # Defines and orchestrates all services (api, db, cache, worker)
+   This will build the Docker images and start the API, database, cache, and worker containers in the background.  
+2. Apply Database Migrations:  
+   Run the initial database migrations to create all the necessary tables.  
+   docker-compose exec api python manage.py migrate
 
-Setup and Installation
-Prerequisites
-Docker
+### **Importing Movie Data**
 
-Docker Compose
-
-Configuration
-Clone the Repository:
-
-git clone <your-repository-url>
-cd <your-repository-folder>
-
-Create the Environment File:
-Inside the backend/ directory, create a file named .env and copy the contents from the example below. Modify the values as needed for your setup.
-
-# .env file inside the 'backend' directory
-# --- Core Django Settings ---
-DJANGO_SECRET_KEY="a-strong-and-unique-secret-key-for-your-project"
-DJANGO_DEBUG=True
-DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
-
-# --- Database Configuration (matches docker-compose.yml) ---
-DATABASE_URL=postgres://recomendationuser:recomendationpass@db:5432/recomendation
-
-# --- Cache Configuration (matches docker-compose.yml) ---
-REDIS_URL=redis://cache:6379/0
-
-# --- Application URLs ---
-FRONTEND_URL=http://localhost:5173
-CORS_ALLOWED_ORIGINS=http://localhost:5173,[http://127.0.0.1:5173](http://127.0.0.1:5173)
-
-# --- Google OAuth2 Credentials ---
-GOOGLE_CLIENT_ID="your-google-client-id.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET="your-google-client-secret"
-
-# --- Email Settings ---
-# For development, 'console.EmailBackend' prints emails to the terminal.
-# For production, use 'django.core.mail.backends.smtp.EmailBackend' and fill in the details below.
-EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
-EMAIL_HOST=smtp.example.com
-EMAIL_PORT=587
-EMAIL_USE_TLS=True
-EMAIL_HOST_USER=your-email@example.com
-EMAIL_HOST_PASSWORD=your-email-password
-
-# --- Security & Throttling (optional) ---
-API_RATE_LIMIT_ANON=100/hour
-API_RATE_LIMIT_USER=1000/hour
-CSRF_COOKIE_SECURE=False
-SESSION_COOKIE_SECURE=False
-SECURE_SSL_REDIRECT=False
-
-Running the Application
-Build and Start Services:
-From the root directory (where docker-compose.yml is located), run:
-
-docker-compose up --build -d
-
-This will build the Docker images and start the API, database, cache, and worker containers in the background.
-
-Apply Database Migrations:
-Run the initial database migrations to create all the necessary tables.
-
-docker-compose exec api python manage.py migrate
-
-Importing Movie Data
-Place the Data File:
-Put your cleaned movie dataset CSV file (e.g., sampled_df.csv) inside the backend/ directory.
-
-Run the Import Command:
-Execute the custom management command to load the movie data into the database. This may take several minutes depending on the file size.
-
-docker-compose exec api python manage.py import_movies sampled_df.csv
+1. Place the Data File:  
+   Put your cleaned movie dataset CSV file (e.g., sampled\_df.csv) inside the backend/ directory.  
+2. Run the Import Command:  
+   Execute the custom management command to load the movie data into the database. This may take several minutes depending on the file size.  
+   docker-compose exec api python manage.py import\_movies sampled\_df.csv
 
 The application should now be running and accessible at http://localhost:8000.
 
-API Endpoints
-The API is versioned under /api/v1/. You can explore all endpoints interactively via the Swagger UI at:
+## **Environment Variables**
+
+* DJANGO\_SECRET\_KEY: A secret key for a particular Django installation.  
+* DJANGO\_DEBUG: Set to True for development (shows detailed errors), False for production.  
+* DJANGO\_ALLOWED\_HOSTS: A comma-separated list of host/domain names that this Django site can serve.  
+* DATABASE\_URL: The connection string for the PostgreSQL database.  
+* REDIS\_URL: The connection string for the Redis cache and Celery broker.  
+* FRONTEND\_URL: The base URL of your frontend application.  
+* CORS\_ALLOWED\_ORIGINS: A comma-separated list of origins that are authorized to make cross-site HTTP requests.  
+* GOOGLE\_CLIENT\_ID / GOOGLE\_CLIENT\_SECRET: Your credentials from Google Cloud Console for OAuth2.  
+* EMAIL\_BACKEND: The backend to use for sending emails. console.EmailBackend is great for development as it prints emails to the terminal.
+
+## **API Endpoints**
+
+The API is versioned under /api/v1/. You can explore all endpoints interactively via the Swagger UI at:  
 http://localhost:8000/api/schema/swagger-ui/
 
-Authentication
-Method
+### **Authentication**
 
-Endpoint
+| Method | Endpoint | Description |
+| :---- | :---- | :---- |
+| POST | /api/v1/auth/token/ | Log in with email/password. |
+| POST | /api/v1/auth/token/refresh/ | Refresh the access token using a cookie. |
+| POST | /api/v1/auth/logout/ | Log out and invalidate the refresh token. |
+| POST | /api/v1/auth/oauth/google/ | Exchange Google auth code for JWT. |
 
-Description
+### **Users**
 
-POST
+| Method | Endpoint | Description |
+| :---- | :---- | :---- |
+| POST | /api/v1/users/ | Register a new user. |
+| GET | /api/v1/users/me/ | Get the profile of the current user. |
+| PATCH | /api/v1/users/me/ | Update the profile of the current user. |
+| POST | /api/v1/users/me/change-password/ | Change the current user's password. |
 
-/auth/token/
+### **Movies**
 
-Log in with email/password.
+| Method | Endpoint | Description |
+| :---- | :---- | :---- |
+| GET | /api/v1/movies/ | Get a paginated list of all movies. Supports sorting via ?ordering= parameter (e.g., \-release\_year, popularity). |
+| GET | /api/v1/movies/{tmdb\_id}/ | Get detailed metadata for a single movie. |
 
-POST
+### **Ratings**
 
-/auth/token/refresh/
-
-Refresh the access token using a cookie.
-
-POST
-
-/auth/logout/
-
-Log out and invalidate the refresh token.
-
-POST
-
-/auth/oauth/google/
-
-Exchange Google auth code for JWT.
-
-Users
-Method
-
-Endpoint
-
-Description
-
-POST
-
-/users/
-
-Register a new user.
-
-GET
-
-/users/me/
-
-Get the profile of the current user.
-
-PATCH
-
-/users/me/
-
-Update the profile of the current user.
-
-POST
-
-/users/me/change-password/
-
-Change the current user's password.
-
-POST
-
-/users/me/resend-verification/
-
-Resend the email verification link.
-
-Movies
-Method
-
-Endpoint
-
-Description
-
-GET
-
-/movies/
-
-Get a paginated list of movies. Supports sorting via ?ordering= (e.g., -release_year, -popularity).
-
-GET
-
-/movies/{tmdb_id}/
-
-Get detailed metadata for a single movie.
-
-Ratings
-Method
-
-Endpoint
-
-Description
-
-POST
-
-/ratings/
-
-Create or update a rating. Body: { "movie_id": <tmdb_id>, "score": <float> }
-
-GET
-
-/ratings/me/
-
-Get all ratings made by the current user.
+| Method | Endpoint | Description |
+| :---- | :---- | :---- |
+| POST | /api/v1/ratings/ | Create a new rating or update an existing one. Requires authentication. **Body**: { "movie\_id": \<tmdb\_id\>, "score": \<float\> } |
+| GET | /api/v1/ratings/me/ | Get a list of all ratings made by the current authenticated user. |
