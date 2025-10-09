@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'users',
     'movies',
     'ratings',
+    'recommendations',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.github',
 ]
@@ -262,3 +263,5 @@ CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 if not DEBUG:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+
+MODEL_SERVICE_URL = env('MODEL_SERVICE_URL', default='http://model_service:8001/recommendations/')

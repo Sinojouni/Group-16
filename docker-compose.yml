@@ -29,6 +29,7 @@ services:
     depends_on:
       - db
       - cache
+      - model_service
 
   worker:
     build:
@@ -43,6 +44,16 @@ services:
       - db
       - cache
 
+  model_service:
+    build:
+      context: ./model_service
+      dockerfile: Dockerfile
+    volumes:
+      - ./model_service:/app
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./backend/.env 
+
 volumes:
   pgdata:
-
