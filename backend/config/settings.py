@@ -53,8 +53,11 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'axes',
+    'django_filters',
     # Local
     'users',
+    'movies',
+    'ratings',
     'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.github',
 ]
