@@ -1,384 +1,205 @@
-# AI-Powered Movie Recommendation System - Backend
+# **Movie Recommendation System - Backend**
 
-## Overview
-This is the backend API for the AI-Powered Movie and Book Recommendation System developed by Team Deep_Minds for the Samsung Innovation Campus AI Course Capstone Project.
+This repository contains the backend service for a movie recommendation application. It is built with Django and Django REST Framework, providing a robust API for user management, movie data, and ratings. The system is designed to work alongside a separate FastAPI service that will host the machine learning recommendation model.
 
-## Features
-- **User Management**: Create, read, update, and delete user accounts
-- **Movie Database**: Comprehensive movie catalog with metadata
-- **Rating System**: Users can rate movies on a 1-5 scale
-- **AI Recommendations**: Multiple recommendation algorithms:
-  - Content-based filtering (genre similarity)
-  - Collaborative filtering (user-based & item-based)
-  - Matrix factorization (SVD, NMF)
-  - Hybrid approach
-  - Popularity-based fallback
-- **RESTful API**: Clean and well-documented API endpoints
-- **Statistics Dashboard**: System-wide analytics and insights
+## **Table of Contents**
 
-## Tech Stack
-- **Framework**: Flask 2.3.3
-- **Database**: SQLite with SQLAlchemy ORM
-- **ML Libraries**: scikit-learn, NumPy, pandas
-- **Authentication**: Werkzeug password hashing
-- **CORS**: Flask-CORS for cross-origin requests
+* [Architecture Overview](#architecture-overview)  
+* [Features](#features)  
+* [Project Structure](#project-structure)  
+* [Setup and Installation](#setup-and-installation)  
+  * [Prerequisites](#prerequisites)  
+  * [Configuration](#configuration)  
+  * [Running the Application](#running-the-application)  
+  * [Importing Movie Data](#importing-movie-data)  
+* [Environment Variables](#environment-variables)  
+* [API Endpoints](#api-endpoints)  
+  * [Authentication](#authentication)  
+  * [Users](#users)  
+  * [Movies](#movies)  
+  * [Ratings](#ratings)
 
-## Project Structure
+## **Architecture Overview**
+
+The backend is composed of two main services (one implemented, one planned):
+
+1. **Django API Service (This Repository):** A powerful backend responsible for:  
+   * User registration, authentication, and profile management.  
+   * Storing and serving movie metadata.  
+   * Collecting and managing user ratings for movies.  
+   * Securely handling all stateful operations and business logic.  
+
+2. **FastAPI Model Service (Planned):** A high-performance, stateless service dedicated to:  
+   * Wrapping the trained recommendation model.  
+   * Providing an endpoint to generate movie recommendations for users.  
+   * This service can be scaled independently to handle heavy inference loads.
+
+## **Features**
+
+* **Robust Authentication:** Secure token-based authentication using JWT with HttpOnly cookies for refresh tokens to prevent XSS attacks. Includes CSRF protection.  
+* **User Management:** Full CRUD operations for users, email verification, and secure password reset functionality.  
+* **Social Login:** OAuth2 integration for Google login.  
+* **Movie Metadata API:** Endpoints to list all movies with pagination and sorting, and to retrieve detailed metadata for a specific movie.  
+* **Rating System:** Allows authenticated users to create, update, and view their movie ratings (0.5 to 5.0).  
+* **Interactive API Docs:** Automatic generation of a Swagger UI for easy testing and exploration of all endpoints.  
+* **Containerized:** Fully containerized with Docker and Docker Compose for easy setup and consistent development/production environments.  
+* **Asynchronous Tasks:** Uses Celery and Redis to handle background tasks like sending emails, ensuring fast API response times.  
+* **Security:** Includes brute-force attack prevention (django-axes) and modern password hashing (Argon2).
+
+## **Project Structure**
+
 ```
+
 backend/
-├── app.py                      # Main Flask application
-├── models.py                   # Database models (User, Movie, Rating, Recommendation)
-├── routes.py                   # API endpoints
-├── config.py                   # Configuration settings
-├── recommendation_engine.py    # AI recommendation logic
-├── data_loader.py             # Utility to load MovieLens data
-├── requirements.txt           # Python dependencies
-├── .env.example              # Example environment variables
-├── README.md                 # This file
-└── models/                   # Directory for trained ML models
-    └── (place your trained models here)
+├── config/             # Main project configuration (settings, urls)
+├── movies/             # App for movie metadata and browsing
+│   └── management/
+│       └── commands/
+│           └── import_movies.py # Script to load movie data
+├── ratings/            # App for user ratings
+├── users/              # App for user management and authentication
+├── Dockerfile          # Instructions to build the Django API image
+└── requirements.txt    # Python dependencies
+docker-compose.yml      # Defines and orchestrates all services (api, db, cache, worker)
+
 ```
 
-## Installation
+## **Setup and Installation**
 
-### Prerequisites
-- Python 3.8 or higher
-- pip package manager
+### **Prerequisites**
 
-### Setup Steps
+* [Docker](https://www.docker.com/get-started)  
+* [Docker Compose](https://docs.docker.com/compose/install/)
 
-1. **Clone the repository** (or navigate to the backend directory)
+### **Configuration**
+
+1. **Clone the Repository:**  
    ```bash
-   cd backend
-   ```
+   git clone <your-repository-url>
+   cd <your-repository-folder>
 
-2. **Create a virtual environment**
+
+2. **Create the Environment File:**
+   Inside the backend/ directory, create a file named `.env` and copy the contents from the example below. Modify the values as needed for your setup.
+
    ```bash
-   python -m venv venv
-   ```
+   # .env file inside the 'backend' directory
+   DJANGO_SECRET_KEY="a-strong-and-unique-secret-key-for-your-project"
+   DJANGO_DEBUG=True
+   DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
 
-3. **Activate the virtual environment**
-   - Windows:
-     ```bash
-     venv\Scripts\activate
-     ```
-   - macOS/Linux:
-     ```bash
-     source venv/bin/activate
-     ```
+   # Database Configuration (matches docker-compose.yml)
+   DATABASE_URL=postgres://recomendationuser:recomendationpass@db:5432/recomendation
 
-4. **Install dependencies**
+   # Cache Configuration (matches docker-compose.yml)
+   REDIS_URL=redis://cache:6379/0
+
+   # Frontend URL for constructing links in emails
+   FRONTEND_URL=http://localhost:5173
+   CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+
+   # Google OAuth2 Credentials
+   GOOGLE_CLIENT_ID="your-google-client-id.apps.googleusercontent.com"
+   GOOGLE_CLIENT_SECRET="your-google-client-secret"
+
+   # Email settings (console backend for development)
+   EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+
+
+### **Running the Application**
+
+1. **Build and Start Services:**
+   From the root directory (where `docker-compose.yml` is located), run:
+
    ```bash
-   pip install -r requirements.txt
+   docker-compose up --build -d
    ```
 
-5. **Set up environment variables**
+   This will build the Docker images and start the API, database, cache, and worker containers in the background.
+
+2. **Apply Database Migrations:**
+   Run the initial database migrations to create all the necessary tables.
+
    ```bash
-   copy .env.example .env
+   docker-compose exec api python manage.py migrate
    ```
-   Edit `.env` file with your configuration
 
-6. **Initialize the database**
+### **Importing Movie Data**
+
+1. **Download the Dataset:**
+   The sample dataset is available here:
+   [sampled_df.csv (Google Drive)](https://drive.google.com/file/d/1t2nYyr0bw-6JbrbMDOSDQfrrRF46qUyw/view?usp=drive_link)
+
+   Download it manually and place it inside your `backend/` directory.
+
+   ```
+   backend/
+   ├── sampled_df.csv
+   ├── manage.py
+   └── ...
+   ```
+
+2. **Run the Import Command:**
+
    ```bash
-   python app.py
-   ```
-   This will create the SQLite database and tables automatically.
-
-## Loading Data
-
-### MovieLens Dataset
-
-1. **Download MovieLens dataset**
-   - Visit: https://grouplens.org/datasets/movielens/
-   - Download MovieLens 100K or Latest-Small dataset
-   - Extract the files
-
-2. **Create data directory**
-   ```bash
-   mkdir data
+   docker-compose exec api python manage.py import_movies sampled_df.csv
    ```
 
-3. **Copy CSV files**
-   - Place `movies.csv` and `ratings.csv` in the `data/` directory
+   This loads the movie metadata into your PostgreSQL database.
+   Depending on file size, it may take a few minutes.
 
-4. **Load data into database**
-   ```bash
-   python data_loader.py
-   ```
+The application should now be accessible at:
+[http://localhost:8000](http://localhost:8000)
 
-## Running the Application
+## **Environment Variables**
 
-### Development Mode
-```bash
-python app.py
-```
-The API will be available at `http://localhost:5000`
+| Variable                                    | Description                                                                |
+| :------------------------------------------ | :------------------------------------------------------------------------- |
+| `DJANGO_SECRET_KEY`                         | A secret key for a particular Django installation.                         |
+| `DJANGO_DEBUG`                              | Set to True for development (shows detailed errors), False for production. |
+| `DJANGO_ALLOWED_HOSTS`                      | A comma-separated list of allowed hosts.                                   |
+| `DATABASE_URL`                              | The PostgreSQL connection string.                                          |
+| `REDIS_URL`                                 | The Redis connection string (for Celery broker).                           |
+| `FRONTEND_URL`                              | The base URL of your frontend app.                                         |
+| `CORS_ALLOWED_ORIGINS`                      | A comma-separated list of allowed frontend origins.                        |
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | OAuth2 credentials from Google Cloud Console.                              |
+| `EMAIL_BACKEND`                             | The backend used for sending emails (console backend for development).     |
 
-### Production Mode
-```bash
-gunicorn -w 4 -b 0.0.0.0:5000 app:app
-```
+## **API Endpoints**
 
-## API Documentation
+The API is versioned under `/api/v1/`.
+Interactive Swagger UI available at:
+[http://localhost:8000/api/schema/swagger-ui/](http://localhost:8000/api/schema/swagger-ui/)
 
-### Base URL
-```
-http://localhost:5000/api
-```
+### **Authentication**
 
-### Endpoints
+| Method | Endpoint                    | Description                               |
+| :----- | :-------------------------- | :---------------------------------------- |
+| POST   | /api/v1/auth/token/         | Log in with email/password.               |
+| POST   | /api/v1/auth/token/refresh/ | Refresh the access token using a cookie.  |
+| POST   | /api/v1/auth/logout/        | Log out and invalidate the refresh token. |
+| POST   | /api/v1/auth/oauth/google/  | Exchange Google auth code for JWT.        |
 
-#### **Users**
+### **Users**
 
-- **Create User**
-  ```
-  POST /api/users
-  Body: {
-    "username": "john_doe",
-    "email": "john@example.com",
-    "password": "securepass123",
-    "age": 25,
-    "gender": "M",
-    "occupation": "Engineer"
-  }
-  ```
+| Method | Endpoint                          | Description                             |
+| :----- | :-------------------------------- | :-------------------------------------- |
+| POST   | /api/v1/users/                    | Register a new user.                    |
+| GET    | /api/v1/users/me/                 | Get the profile of the current user.    |
+| PATCH  | /api/v1/users/me/                 | Update the profile of the current user. |
+| POST   | /api/v1/users/me/change-password/ | Change the current user's password.     |
 
-- **Get User**
-  ```
-  GET /api/users/<user_id>
-  ```
+### **Movies**
 
-- **Get All Users**
-  ```
-  GET /api/users?page=1&per_page=20
-  ```
+| Method | Endpoint                  | Description                                                                                                            |
+| :----- | :------------------------ | :--------------------------------------------------------------------------------------------------------------------- |
+| GET    | /api/v1/movies/           | Get a paginated list of all movies. Supports sorting via `?ordering=` parameter (e.g., `-release_year`, `popularity`). |
+| GET    | /api/v1/movies/{tmdb_id}/ | Get detailed metadata for a single movie.                                                                              |
 
-- **Update User**
-  ```
-  PUT /api/users/<user_id>
-  Body: { "age": 26, "occupation": "Senior Engineer" }
-  ```
+### **Ratings**
 
-- **Delete User**
-  ```
-  DELETE /api/users/<user_id>
-  ```
+| Method | Endpoint            | Description                                                                        |
+| :----- | :------------------ | :--------------------------------------------------------------------------------- |
+| POST   | /api/v1/ratings/    | Create or update a rating. **Body:** `{ "movie_id": <tmdb_id>, "score": <float> }` |
+| GET    | /api/v1/ratings/me/ | Get all ratings made by the current user.                                          |
 
-#### **Movies**
-
-- **Create Movie**
-  ```
-  POST /api/movies
-  Body: {
-    "movie_id": 1,
-    "title": "Toy Story (1995)",
-    "genres": "Animation|Children|Comedy",
-    "release_year": 1995
-  }
-  ```
-
-- **Get Movie**
-  ```
-  GET /api/movies/<movie_id>
-  ```
-
-- **Get All Movies**
-  ```
-  GET /api/movies?page=1&per_page=20&search=toy&genre=Comedy
-  ```
-
-- **Update Movie**
-  ```
-  PUT /api/movies/<movie_id>
-  ```
-
-- **Delete Movie**
-  ```
-  DELETE /api/movies/<movie_id>
-  ```
-
-#### **Ratings**
-
-- **Create/Update Rating**
-  ```
-  POST /api/ratings
-  Body: {
-    "user_id": 1,
-    "movie_id": 1,
-    "rating": 4.5
-  }
-  ```
-
-- **Get User Ratings**
-  ```
-  GET /api/ratings/user/<user_id>
-  ```
-
-- **Get Movie Ratings**
-  ```
-  GET /api/ratings/movie/<movie_id>
-  ```
-
-- **Delete Rating**
-  ```
-  DELETE /api/ratings/<rating_id>
-  ```
-
-#### **Recommendations**
-
-- **Get Recommendations**
-  ```
-  GET /api/recommendations/<user_id>?n=10&algorithm=auto
-  
-  Algorithms: auto, content
-  ```
-
-- **Save Recommendations**
-  ```
-  POST /api/recommendations/save
-  Body: {
-    "user_id": 1,
-    "recommendations": [
-      {"movie_id": 5, "score": 0.95, "algorithm": "hybrid"},
-      {"movie_id": 10, "score": 0.89, "algorithm": "hybrid"}
-    ]
-  }
-  ```
-
-- **Get Saved Recommendations**
-  ```
-  GET /api/recommendations/user/<user_id>/saved
-  ```
-
-#### **Statistics**
-
-- **Get System Overview**
-  ```
-  GET /api/stats/overview
-  ```
-
-#### **Health Check**
-
-- **Check API Status**
-  ```
-  GET /api/health
-  ```
-
-## Integrating Your Trained Model
-
-After training your recommendation model, integrate it with the backend:
-
-1. **Save your trained model**
-   ```python
-   import pickle
-   
-   # Save your model
-   with open('models/hybrid_model.pkl', 'wb') as f:
-       pickle.dump(your_trained_model, f)
-   ```
-
-2. **Update `recommendation_engine.py`**
-   - Modify the `_get_model_recommendations()` method
-   - Add your model's prediction logic
-   - Example:
-     ```python
-     def _get_model_recommendations(self, user_id, n_recommendations):
-         # Your model prediction code
-         predictions = self.model.predict(user_id, all_movie_ids)
-         # Sort and return top N recommendations
-         return top_recommendations
-     ```
-
-3. **Load the model on startup**
-   - The model will automatically load when the app starts
-   - Place your model file in the `models/` directory
-
-## Database Schema
-
-### Users Table
-- `id`: Primary key
-- `username`: Unique username
-- `email`: Unique email
-- `password_hash`: Hashed password
-- `age`, `gender`, `occupation`: User demographics
-- `created_at`: Timestamp
-
-### Movies Table
-- `id`: Primary key
-- `movie_id`: MovieLens ID
-- `title`: Movie title
-- `genres`: Pipe-separated genres
-- `release_year`: Year of release
-- `avg_rating`: Average rating
-- `rating_count`: Number of ratings
-
-### Ratings Table
-- `id`: Primary key
-- `user_id`: Foreign key to Users
-- `movie_id`: Foreign key to Movies
-- `rating`: Rating value (1-5)
-- `timestamp`: When rated
-
-### Recommendations Table
-- `id`: Primary key
-- `user_id`: Foreign key to Users
-- `movie_id`: Foreign key to Movies
-- `score`: Recommendation confidence
-- `algorithm`: Algorithm used
-- `created_at`: Timestamp
-
-## Testing
-
-### Using curl
-```bash
-# Health check
-curl http://localhost:5000/api/health
-
-# Create user
-curl -X POST http://localhost:5000/api/users \
-  -H "Content-Type: application/json" \
-  -d '{"username":"testuser","email":"test@test.com","password":"test123"}'
-
-# Get recommendations
-curl http://localhost:5000/api/recommendations/1?n=5
-```
-
-### Using Postman
-Import the API endpoints into Postman and test each endpoint with sample data.
-
-## Deployment
-
-### PythonAnywhere Deployment
-
-1. **Upload files** to PythonAnywhere
-2. **Install dependencies** in virtual environment
-3. **Configure WSGI file**:
-   ```python
-   import sys
-   path = '/home/yourusername/backend'
-   if path not in sys.path:
-       sys.path.append(path)
-   
-   from app import create_app
-   application = create_app('production')
-   ```
-4. **Set environment variables** in PythonAnywhere dashboard
-5. **Reload web app**
-
-## Team Members
-- **Hadi Baghdadi** (Team Leader)
-- **Hussein Jouni**
-- **Faris Daas**
-
-## Project Timeline
-- **Phase 1**: Setup & Data Collection ✓
-- **Phase 2**: Data Processing & Analysis
-- **Phase 3**: Model Development
-- **Phase 4**: System Development (Current)
-- **Phase 5**: Testing & Deployment
-
-## License
-© 2023 Samsung Innovation Campus. All rights reserved.
-
-## Support
-For issues or questions, contact the development team.
