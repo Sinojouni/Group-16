@@ -62,7 +62,7 @@ backend/
 └── requirements.txt    # Python dependencies
 docker-compose.yml      # Defines and orchestrates all services (api, db, cache, worker)
 
-````
+```
 
 ## **Setup and Installation**
 
@@ -77,7 +77,7 @@ docker-compose.yml      # Defines and orchestrates all services (api, db, cache,
    ```bash
    git clone <your-repository-url>
    cd <your-repository-folder>
-````
+``
 
 2. **Create the Environment File:**
    Inside the backend/ directory, create a file named `.env` and copy the contents from the example below. Modify the values as needed for your setup.
@@ -104,7 +104,7 @@ docker-compose.yml      # Defines and orchestrates all services (api, db, cache,
 
    # Email settings (console backend for development)
    EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
-````
+``
 
 ### **Running the Application**
 
@@ -190,4 +190,3 @@ Interactive Swagger UI available at:
 | POST   | /api/v1/ratings/    | Create or update a rating. **Body:** `{ "movie_id": <tmdb_id>, "score": <float> }` |
 | GET    | /api/v1/ratings/me/ | Get all ratings made by the current user.                                          |
 
-```
