@@ -7,13 +7,16 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List
 
+from pathlib import Path
+
 # --- Constants and Configuration ---
-ARTIFACTS_DIR = "artifacts"
-MODEL_PATH = f"{ARTIFACTS_DIR}/best_model.pt"
-ITEM_FEATURES_PATH = f"{ARTIFACTS_DIR}/item_features.npy"
-MOVIES_DF_PATH = f"{ARTIFACTS_DIR}/movies_df.csv"
-USER_FEATURES_PATH = f"{ARTIFACTS_DIR}/user_features.npy" # For known users
-USER_2_IDX_PATH = f"{ARTIFACTS_DIR}/user2idx.json"
+BASE_DIR = Path(__file__).resolve().parent
+ARTIFACTS_DIR = str(BASE_DIR / "artifacts")
+MODEL_PATH = str(BASE_DIR / "artifacts" / "best_model.pt")
+ITEM_FEATURES_PATH = str(BASE_DIR / "artifacts" / "item_features.npy")
+MOVIES_DF_PATH = str(BASE_DIR / "artifacts" / "movies_df.csv")
+USER_FEATURES_PATH = str(BASE_DIR / "artifacts" / "user_features.npy") # For known users
+USER_2_IDX_PATH = str(BASE_DIR / "artifacts" / "user2idx.json")
 
 EMBED_DIM = 64
 ITEM_INPUT_DIM = 409 # This must match the dimension from your notebook
@@ -78,6 +81,7 @@ print("Artifacts loaded and item embeddings computed.")
 
 # --- API Endpoints ---
 @app.post("/recommendations/")
+@app.post("/predict")
 def get_recommendations(request: RecommendationRequest):
     """
     Generates movie recommendations based on a list of user ratings.

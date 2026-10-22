@@ -22,6 +22,7 @@ import SettingsPage from './pages/SettingsPage';
 import AdminDashboard from './pages/AdminDashboard';
 import HelpPage from './pages/HelpPage';
 import AboutPage from './pages/AboutPage';
+import RecommendationsPage from './pages/RecommendationsPage';
 
 function App() {
   return (
@@ -65,10 +66,10 @@ function App() {
                   <Route path="/trending" element={<TrendingPage />} />
                   <Route path="/genres" element={<GenresPage />} />
                   <Route path="/genre/:genre" element={<GenrePage />} />
-                      <Route path="/search" element={<SearchResultsPage />} />
-                      <Route path="/reviews" element={<ReviewsPage />} />
-                      <Route path="/help" element={<HelpPage />} />
-                      <Route path="/about" element={<AboutPage />} />
+                  <Route path="/search" element={<SearchResultsPage />} />
+                  <Route path="/reviews" element={<ReviewsPage />} />
+                  <Route path="/help" element={<HelpPage />} />
+                  <Route path="/about" element={<AboutPage />} />
                   
                   {/* Protected Routes */}
                   <Route
@@ -92,6 +93,14 @@ function App() {
                     element={
                       <ProtectedRoute>
                         <ProfilePage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/recommendations"
+                    element={
+                      <ProtectedRoute>
+                        <RecommendationsPage />
                       </ProtectedRoute>
                     }
                   />

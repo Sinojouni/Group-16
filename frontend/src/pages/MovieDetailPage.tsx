@@ -1,57 +1,92 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Star, Heart, Play, Plus, ThumbsUp, Calendar, Clock, Users, Award } from 'lucide-react';
-import { Movie } from '../types';
-import { mockMovies, mockReviews } from '../data/mockData';
+import { Movie, Review } from '../types';
 import { useApp } from '../contexts/AppContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import StarRating from '../components/common/StarRating';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { getMovieById } from '../services/movieService';
+import { getReviews, addReview as addReviewService } from '../services/reviewService';
+import { getUserRating, rateMovie } from '../services/ratingService';
 
-const MovieDetailPage: React.FC = () => {
+const MovieDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const { t } = useLanguage();
-  const [movie, setMovie] = useState<Movie | null>(null);
+  const { token } = useAuth();
+  const [movie, setMovie] = useState(null as Movie | null);
   const [userRating, setUserRating] = useState(0);
+  const [userReview, setUserReview] = useState(null as Review | null);
   const [showReviewModal, setShowReviewModal] = useState(false);
   const [reviewComment, setReviewComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const { addToWatchlist, removeFromWatchlist, watchlist, addReview } = useApp();
+  const [reviews, setReviews] = useState([] as Review[]);
+  const { addToWatchlist, removeFromWatchlist, watchlist } = useApp();
 
   useEffect(() => {
     const loadMovie = async () => {
       if (!id) return;
       
       try {
-        // Simulate API call
-        setTimeout(() => {
-          const foundMovie = mockMovies.find(m => m.id === id);
-          if (foundMovie) {
-            setMovie({
-              ...foundMovie,
-              reviews: mockReviews.filter(r => r.movieId === id)
-            });
+        setIsLoading(true);
+        const movieData = await getMovieById(id);
+        setMovie(movieData);
+        
+        // Load reviews for this movie
+        const reviewsData = await getReviews(id);
+        setReviews(reviewsData.results);
+        
+        // Load user's rating if authenticated
+        if (token) {
+          try {
+            const userRatingData = await getUserRating(id, token);
+            if (userRatingData) {
+              setUserRating(userRatingData.score);
+              setUserReview(userRatingData);
+            }
+          } catch (error) {
+            console.log('User has not rated this movie yet');
           }
-          setIsLoading(false);
-        }, 500);
+        }
       } catch (error) {
+        console.error('Error fetching movie:', error);
+      } finally {
         setIsLoading(false);
       }
     };
 
     loadMovie();
-  }, [id]);
+  }, [id, token]);
 
   const handleAddReview = async () => {
-    if (!movie || userRating === 0 || !reviewComment.trim()) return;
+    if (!movie || userRating === 0 || !reviewComment.trim() || !token) return;
 
     try {
-      await addReview(movie.id, userRating, reviewComment);
+      const newReview = await addReviewService(movie.id, userRating, reviewComment, token);
+      setReviews([newReview, ...reviews]);
       setShowReviewModal(false);
       setUserRating(0);
       setReviewComment('');
     } catch (error) {
-      // Error handled in context
+      console.error('Error adding review:', error);
+      // You might want to show an error message to the user
+    }
+  };
+
+  const handleRateMovie = async (rating: number) => {
+    if (!movie || !token) return;
+    
+    try {
+      await rateMovie(movie.id, rating, token);
+      setUserRating(rating);
+      
+      // Refresh reviews after rating
+      const reviewsData = await getReviews(movie.id);
+      setReviews(reviewsData.results);
+    } catch (error) {
+      console.error('Error rating movie:', error);
+      // You might want to show an error message to the user
     }
   };
 
@@ -84,6 +119,15 @@ const MovieDetailPage: React.FC = () => {
           src={movie.backdrop}
           alt={movie.title}
           className="w-full h-full object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            // First try to use movie title as a fallback
+            if (movie.title && movie.title.trim() !== '') {
+              target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(movie.title)}&background=1a202c&color=fff&size=1280&bold=true&length=2`;
+            } else {
+              target.src = 'https://placehold.co/1280x720/1a202c/FFFFFF?text=No+Image';
+            }
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
@@ -94,6 +138,15 @@ const MovieDetailPage: React.FC = () => {
               src={movie.poster}
               alt={movie.title}
               className="w-64 h-96 object-cover rounded-lg shadow-2xl"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                // First try to use movie title as a fallback
+                if (movie.title && movie.title.trim() !== '') {
+                  target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(movie.title)}&background=1a202c&color=fff&size=300&bold=true&length=2`;
+                } else {
+                  target.src = 'https://placehold.co/300x450/1a202c/FFFFFF?text=No+Image';
+                }
+              }}
             />
             
             <div className="flex-1 pb-8">
@@ -127,7 +180,7 @@ const MovieDetailPage: React.FC = () => {
 
               <div className="flex gap-4 mb-6">
                 <button
-                  onClick={() => setShowReviewModal(true)}
+                  onClick={() => token ? setShowReviewModal(true) : alert('Please login to rate this movie')}
                   className="bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors duration-200 flex items-center gap-2"
                 >
                   <Star className="w-5 h-5" />
@@ -164,41 +217,61 @@ const MovieDetailPage: React.FC = () => {
             {/* Synopsis */}
             <div className="mb-8">
               <h2 className="text-2xl font-bold text-white mb-4">{t('synopsis')}</h2>
-              <p className="text-gray-300 leading-relaxed">{movie.synopsis}</p>
+              <p className="text-gray-300 leading-relaxed">{movie.synopsis || movie.overview || 'No synopsis available'}</p>
             </div>
 
             {/* Cast */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-white mb-4">{t('cast')}</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {movie.cast.map((member) => (
-                  <div key={member.id} className="text-center">
-                    <img
-                      src={member.photo || `https://ui-avatars.com/api/?name=${member.name}&background=374151&color=fff`}
-                      alt={member.name}
-                      className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"
-                    />
-                    <p className="text-white font-medium text-sm">{member.name}</p>
-                    <p className="text-gray-400 text-xs">{member.character}</p>
-                  </div>
-                ))}
+            {movie.cast && movie.cast.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-2xl font-bold text-white mb-4">{t('cast')}</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {movie.cast.map((member) => (
+                    <div key={member.id} className="text-center">
+                      <img
+                        src={member.photo || `https://ui-avatars.com/api/?name=${member.name}&background=374151&color=fff`}
+                        alt={member.name}
+                        className="w-20 h-20 rounded-full mx-auto mb-2 object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = `https://ui-avatars.com/api/?name=${member.name}&background=374151&color=fff`;
+                        }}
+                      />
+                      <p className="text-white font-medium text-sm">{member.name}</p>
+                      <p className="text-gray-400 text-xs">{member.character}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Reviews */}
             <div>
-              <h2 className="text-2xl font-bold text-white mb-4">
-                {t('reviews')} ({movie.reviews.length})
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-white">
+                  {t('reviews')} ({reviews.length})
+                </h2>
+                {token && (
+                  <button
+                    onClick={() => setShowReviewModal(true)}
+                    className="bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition-colors duration-200"
+                  >
+                    {t('writeReview')}
+                  </button>
+                )}
+              </div>
               
               <div className="space-y-6">
-                {movie.reviews.map((review) => (
+                {reviews.map((review) => (
                   <div key={review.id} className="bg-gray-800 rounded-lg p-6">
                     <div className="flex items-start gap-4">
                       <img
                         src={review.userAvatar || `https://ui-avatars.com/api/?name=${review.username}&background=dc2626&color=fff`}
                         alt={review.username}
                         className="w-12 h-12 rounded-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.src = `https://ui-avatars.com/api/?name=${review.username}&background=dc2626&color=fff`;
+                        }}
                       />
                       
                       <div className="flex-1">
@@ -222,6 +295,20 @@ const MovieDetailPage: React.FC = () => {
                     </div>
                   </div>
                 ))}
+                
+                {reviews.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-400">{t('noReviewsYet')}</p>
+                    {token && (
+                      <button
+                        onClick={() => setShowReviewModal(true)}
+                        className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors duration-200"
+                      >
+                        {t('beFirstToReview')}
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -232,12 +319,14 @@ const MovieDetailPage: React.FC = () => {
               <h3 className="text-white font-semibold mb-4">{t('movieDetails')}</h3>
               
               <div className="space-y-3 text-sm">
-                <div>
-                  <span className="text-gray-400">{t('director')}:</span>
-                  <span className="text-white ml-2">
-                    {movie.crew.find(c => c.role === 'Director')?.name || 'Unknown'}
-                  </span>
-                </div>
+                {movie.crew && movie.crew.length > 0 && (
+                  <div>
+                    <span className="text-gray-400">{t('director')}:</span>
+                    <span className="text-white ml-2">
+                      {movie.crew.find(c => c.role === 'Director')?.name || 'Unknown'}
+                    </span>
+                  </div>
+                )}
                 
                 <div>
                   <span className="text-gray-400">{t('runtime')}:</span>
@@ -267,6 +356,19 @@ const MovieDetailPage: React.FC = () => {
                     ))}
                   </div>
                 </div>
+                
+                {/* User Rating Section */}
+                {token && (
+                  <div className="pt-4 border-t border-gray-700">
+                    <span className="text-gray-400 block mb-2">{t('yourRating')}:</span>
+                    <StarRating
+                      rating={userRating}
+                      onRatingChange={handleRateMovie}
+                      size="md"
+                      className="justify-start"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -274,7 +376,7 @@ const MovieDetailPage: React.FC = () => {
       </div>
 
       {/* Review Modal */}
-      {showReviewModal && (
+      {showReviewModal && token && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
             <h3 className="text-xl font-bold text-white mb-4">{t('rateReview')}</h3>

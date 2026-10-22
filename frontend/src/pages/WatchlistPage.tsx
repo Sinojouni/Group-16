@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Star, Calendar, Clock, Filter, Search, SortAsc, Grid3X3, List, Trash2, Eye } from 'lucide-react';
 import { Movie } from '../types';
-import { mockMovies } from '../data/mockData';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getMovies } from '../services/movieService';
 import { useApp } from '../contexts/AppContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import StarRating from '../components/common/StarRating';
@@ -22,13 +22,23 @@ const WatchlistPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      const watchlistMovies = mockMovies.filter(movie => watchlist.includes(movie.id));
-      setMovies(watchlistMovies);
-      setFilteredMovies(watchlistMovies);
-      setIsLoading(false);
-    }, 500);
+    const fetchWatchlistMovies = async () => {
+      try {
+        setIsLoading(true);
+        const allMovies = await getMovies();
+        const watchlistMovies = allMovies.filter(movie => watchlist.includes(movie.id));
+        setMovies(watchlistMovies);
+        setFilteredMovies(watchlistMovies);
+      } catch (error) {
+        console.error('Error fetching watchlist movies:', error);
+        setMovies([]);
+        setFilteredMovies([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchWatchlistMovies();
   }, [watchlist]);
 
   useEffect(() => {

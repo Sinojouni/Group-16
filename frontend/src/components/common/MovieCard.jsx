@@ -1,16 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Star, Play } from 'lucide-react';
-import { Movie } from '../../types';
 import { useApp } from '../../contexts/AppContext';
 
-interface MovieCardProps {
-  movie: Movie;
-  size?: 'sm' | 'md' | 'lg';
-  showInfo?: boolean;
-}
-
-const MovieCard: React.FC<MovieCardProps> = ({ movie, size = 'md', showInfo = true }) => {
+const MovieCard = ({ movie, size = 'md', showInfo = true }) => {
   const { addToWatchlist, removeFromWatchlist, watchlist } = useApp();
   const isInWatchlist = watchlist.includes(movie.id);
 
@@ -20,14 +13,18 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, size = 'md', showInfo = tr
     lg: 'w-44 h-66',
   };
 
-  const handleWatchlistToggle = (e: React.MouseEvent) => {
+  const handleWatchlistToggle = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     if (isInWatchlist) {
       removeFromWatchlist(movie.id);
     } else {
       addToWatchlist(movie.id);
     }
   };
+
+  // Format genres to show up to 2 genres
+  const displayGenres = movie.genres.slice(0, 2).join(', ');
 
   return (
     <div className="group relative overflow-hidden rounded-md transition-all duration-300 hover:scale-105 hover:shadow-lg">
@@ -38,18 +35,31 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, size = 'md', showInfo = tr
             alt={movie.title}
             className="w-full h-full object-cover"
             loading="lazy"
+            onError={(e) => {
+              const target = e.target;
+              // First try to use movie title as a fallback
+              if (movie.title && movie.title.trim() !== '') {
+                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(movie.title)}&background=1a202c&color=fff&size=300&bold=true&length=2`;
+              } else {
+                target.src = 'https://placehold.co/300x450/1a202c/FFFFFF?text=No+Image';
+              }
+            }}
           />
           
           {/* Overlay */}
           <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
             <div className="flex items-center gap-2">
               {/* Play Button */}
-              <Link
-                to={`/movie/${movie.id}`}
+              <button
                 className="bg-white bg-opacity-20 backdrop-blur-sm rounded-full p-2 hover:bg-opacity-30 transition-all duration-200"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  window.location.href = `/movie/${movie.id}`;
+                }}
               >
                 <Play className="w-5 h-5 text-white fill-current" />
-              </Link>
+              </button>
               
               {/* Watchlist Button */}
               <button
@@ -79,16 +89,23 @@ const MovieCard: React.FC<MovieCardProps> = ({ movie, size = 'md', showInfo = tr
               رائج
             </div>
           )}
+          
+          {/* Featured badge */}
+          {movie.isFeatured && (
+            <div className="absolute bottom-1.5 left-1.5 bg-yellow-600 text-white text-xs px-2 py-0.5 rounded-full">
+              مميز
+            </div>
+          )}
         </div>
       </Link>
 
       {showInfo && (
         <div className="p-2.5">
-          <h3 className="text-white font-medium text-sm mb-1 truncate">
+          <h3 className="text-white font-medium text-sm mb-1 truncate" title={movie.title}>
             {movie.title}
           </h3>
-          <p className="text-gray-400 text-xs mb-1.5">
-            {movie.releaseYear} • {movie.genres[0]}
+          <p className="text-gray-400 text-xs mb-1.5 truncate" title={`${movie.releaseYear} • ${displayGenres}`}>
+            {movie.releaseYear} • {displayGenres}
           </p>
           <div className="flex items-center gap-1.5">
             <div className="flex items-center gap-1">

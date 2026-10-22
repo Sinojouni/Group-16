@@ -3,16 +3,10 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Movie } from '../../types';
 import MovieCard from '../common/MovieCard';
 
-interface MovieSectionProps {
-  title: string;
-  movies: Movie[];
-  className?: string;
-}
+const MovieSection = ({ title, movies, className = '' }) => {
+  const scrollRef = useRef(null);
 
-const MovieSection: React.FC<MovieSectionProps> = ({ title, movies, className = '' }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const scroll = (direction: 'left' | 'right') => {
+  const scroll = (direction) => {
     if (scrollRef.current) {
       const scrollAmount = 320; // Approximate width of one movie card plus gap
       const currentScroll = scrollRef.current.scrollLeft;

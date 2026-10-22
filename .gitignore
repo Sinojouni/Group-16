@@ -21,3 +21,10 @@ htmlcov/
 
 # Local development
 local_settings.py
+
+# Frontend
+dist/
+frontend/dist/
+.vite/
+node_modules/.vite/
+

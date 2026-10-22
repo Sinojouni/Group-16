@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { TrendingUp, Filter } from 'lucide-react';
 import { Movie } from '../types';
-import { mockMovies } from '../data/mockData';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { getTrendingMovies } from '../services/movieService';
 
 const TrendingPage: React.FC = () => {
   const { t } = useLanguage();
@@ -13,12 +13,20 @@ const TrendingPage: React.FC = () => {
   const [sortBy, setSortBy] = useState('rating');
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      const trendingMovies = mockMovies.filter(movie => movie.isTrending);
-      setMovies(trendingMovies);
-      setIsLoading(false);
-    }, 500);
+    const fetchTrendingMovies = async () => {
+      try {
+        setIsLoading(true);
+        const trendingMovies = await getTrendingMovies();
+        setMovies(trendingMovies);
+      } catch (error) {
+        console.error('Error fetching trending movies:', error);
+        setMovies([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTrendingMovies();
   }, []);
 
   const sortedMovies = [...movies].sort((a, b) => {

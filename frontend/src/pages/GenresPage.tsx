@@ -13,12 +13,12 @@ import {
   Search
 } from 'lucide-react';
 import { Movie, Genre } from '../types';
-import { mockMovies } from '../data/mockData';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import StarRating from '../components/common/StarRating';
 import StaggeredAnimation from '../components/common/StaggeredAnimation';
+import { getMovies } from '../services/movieService';
 
 const GenresPage: React.FC = () => {
   const { t } = useLanguage();
@@ -51,8 +51,8 @@ const GenresPage: React.FC = () => {
   const getUserViewingHistory = () => {
     if (!user) return [];
     // Simulate user's viewing history based on mock data
-    const userMovies = mockMovies.filter(movie => 
-      movie.averageRating > 4.0 // Simulate user likes highly rated movies
+    const userMovies = movies.filter(movie => 
+      (movie.averageRating || 0) > 4.0 // Simulate user likes highly rated movies
     );
     const genreCounts: { [key: string]: number } = {};
     
@@ -71,11 +71,20 @@ const GenresPage: React.FC = () => {
   const userFavoriteGenres = user ? getUserViewingHistory() : [];
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setMovies(mockMovies);
-      setIsLoading(false);
-    }, 500);
+    const fetchMovies = async () => {
+      try {
+        setIsLoading(true);
+        const allMovies = await getMovies();
+        setMovies(allMovies);
+      } catch (error) {
+        console.error('Error fetching movies:', error);
+        setMovies([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMovies();
   }, []);
 
   useEffect(() => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, User, LogOut, Settings, Menu, X, Globe, Film, TrendingUp, Grid3X3, ChevronDown, Shield } from 'lucide-react';
+import { Search, User, LogOut, Settings, Menu, X, Globe, Film, TrendingUp, Grid3X3, ChevronDown, Shield, Sparkles } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 
@@ -13,9 +13,9 @@ const Header = () => {
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const searchRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef(null);
 
-  const handleSearch = (e: any) => {
+  const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
@@ -24,12 +24,12 @@ const Header = () => {
     }
   };
 
-  const handleSearchInputChange = (e: any) => {
+  const handleSearchInputChange = (e) => {
     setSearchQuery(e.target.value);
     setShowSearchSuggestions(e.target.value.length > 0);
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
+  const handleSuggestionClick = (suggestion) => {
     setSearchQuery(suggestion);
     navigate(`/search?q=${encodeURIComponent(suggestion)}`);
     setShowSearchSuggestions(false);
@@ -37,8 +37,8 @@ const Header = () => {
 
   // Close suggestions when clicking outside
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowSearchSuggestions(false);
       }
     };
@@ -55,7 +55,7 @@ const Header = () => {
     navigate('/');
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path) => location.pathname === path;
 
   // Popular search suggestions
   const searchSuggestions = [
@@ -75,7 +75,8 @@ const Header = () => {
   const navigationItems = [
     { path: '/', label: t('home'), icon: Film, exact: true },
     { path: '/trending', label: t('trending'), icon: TrendingUp, exact: false },
-    { path: '/genres', label: t('genres'), icon: Grid3X3, exact: false }
+    { path: '/genres', label: t('genres'), icon: Grid3X3, exact: false },
+    { path: '/recommendations', label: t('recommendations'), icon: Sparkles, exact: false }
   ];
 
   return (

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Filter } from 'lucide-react';
 import { Movie } from '../types';
-import { mockMovies } from '../data/mockData';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { getMoviesByGenre } from '../services/movieService';
 
 const GenrePage: React.FC = () => {
   const { genre } = useParams<{ genre: string }>();
@@ -24,14 +24,22 @@ const GenrePage: React.FC = () => {
   };
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      const genreMovies = mockMovies.filter(movie => 
-        movie.genres.some(g => g.toLowerCase() === genre?.toLowerCase())
-      );
-      setMovies(genreMovies);
-      setIsLoading(false);
-    }, 500);
+    const fetchMoviesByGenre = async () => {
+      if (!genre) return;
+      
+      try {
+        setIsLoading(true);
+        const genreMovies = await getMoviesByGenre(genre);
+        setMovies(genreMovies);
+      } catch (error) {
+        console.error('Error fetching movies by genre:', error);
+        setMovies([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMoviesByGenre();
   }, [genre]);
 
   const sortedMovies = [...movies].sort((a, b) => {

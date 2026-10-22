@@ -2,13 +2,48 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Info, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Movie } from '../../types';
-import { mockMovies } from '../../data/mockData';
+import { useApp } from '../../contexts/AppContext';
+import { getFeaturedMovies } from '../../services/movieService';
 
-const HeroSection: React.FC = () => {
+interface HeroSectionProps {
+  movies?: Movie[];
+}
+
+const HeroSection: React.FC<HeroSectionProps> = ({ movies: propMovies }) => {
+  const { movies: contextMovies } = useApp();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const featuredMovies = mockMovies.filter(movie => movie.isFeatured);
+  const [featuredMovies, setFeaturedMovies] = useState<Movie[]>([]);
+
+  // Use movies from props, context, or fetch from API
+  useEffect(() => {
+    const loadFeaturedMovies = async () => {
+      if (propMovies && propMovies.length > 0) {
+        // Use movies from props
+        const featured = propMovies.filter(movie => movie.isFeatured);
+        setFeaturedMovies(featured);
+      } else if (contextMovies && contextMovies.length > 0) {
+        // Use movies from context
+        const featured = contextMovies.filter(movie => movie.isFeatured);
+        setFeaturedMovies(featured);
+      } else {
+        // Fetch movies from API
+        try {
+          const featured = await getFeaturedMovies();
+          setFeaturedMovies(featured);
+        } catch (error) {
+          console.error('Error fetching featured movies:', error);
+          // Fallback to empty array
+          setFeaturedMovies([]);
+        }
+      }
+    };
+
+    loadFeaturedMovies();
+  }, [propMovies, contextMovies]);
 
   useEffect(() => {
+    if (featuredMovies.length === 0) return;
+
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % featuredMovies.length);
     }, 5000);
@@ -75,9 +110,9 @@ const HeroSection: React.FC = () => {
             </div>
 
             <p className="text-gray-200 text-base leading-relaxed mb-6 max-w-xl">
-              {currentMovie.synopsis.length > 200
+              {currentMovie.synopsis && currentMovie.synopsis.length > 200
                 ? `${currentMovie.synopsis.substring(0, 200)}...`
-                : currentMovie.synopsis}
+                : currentMovie.synopsis || 'No description available'}
             </p>
 
             <div className="flex gap-4">

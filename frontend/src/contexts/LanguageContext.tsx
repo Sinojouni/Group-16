@@ -129,7 +129,6 @@ const translations = {
     userInfo: 'معلومات المستخدم',
     activeMember: 'عضو نشط',
     joinedOn: 'انضم في',
-    reviews: 'مراجعة',
     ratedMovies: 'الأفلام المقيمة',
     watchlist: 'قائمة المفضلة',
     recentReviews: 'آخر المراجعات',
@@ -144,7 +143,7 @@ const translations = {
     // Movie Details
     movieDetails: 'تفاصيل الفيلم',
     yourRating: 'تقييمك',
-    yourReview: 'مراجعتك',
+    yourReview: 'ująعتك',
     shareYourThoughts: 'شارك أفكارك حول هذا الفيلم...',
     submitReview: 'إرسال المراجعة',
     similarTitles: 'عناوين مشابهة',
@@ -157,17 +156,14 @@ const translations = {
     
     // Admin
     totalUsers: 'إجمالي المستخدمين',
-    totalMovies: 'إجمالي الأفلام',
     totalReviews: 'إجمالي المراجعات',
     activeUsers: 'المستخدمون النشطون',
     recentMovies: 'الأفلام الحديثة',
-    recentReviews: 'المراجعات الحديثة',
     manageMovies: 'إدارة الأفلام',
     manageReviews: 'إدارة المراجعات',
     addNewMovie: 'إضافة فيلم جديد',
     searchInMovies: 'البحث في الأفلام...',
     movieTitle: 'عنوان الفيلم',
-    year: 'السنة',
     actions: 'الإجراءات',
     
     // Notifications
@@ -205,7 +201,6 @@ const translations = {
     movieNotFound: 'الفيلم غير موجود',
     movieNotFoundDescription: 'الفيلم الذي تبحث عنه غير موجود',
     minutes: 'دقيقة',
-    movieDetails: 'تفاصيل الفيلم',
     synopsis: 'القصة',
     cast: 'الممثلون',
     director: 'المخرج',
@@ -214,7 +209,7 @@ const translations = {
     rating: 'التقييم',
     genres: 'الأنواع',
     yourRating: 'تقييمك',
-    yourReview: 'مراجعتك',
+    yourReview: 'ująعتك',
     shareYourThoughts: 'شارك أفكارك حول هذا الفيلم...',
     submitReview: 'إرسال المراجعة',
     cancel: 'إلغاء',
@@ -277,12 +272,10 @@ const translations = {
     gettingStarted: 'البدء',
     searchAndBrowse: 'البحث والتصفح',
     reviewsAndRatings: 'المراجعات والتقييمات',
-    watchlist: 'قائمة المفضلة',
     accountSettings: 'إعدادات الحساب',
     technicalSupport: 'الدعم التقني',
     didntFindWhatYouNeed: 'لم تجد ما تبحث عنه؟',
     contactUs: 'تواصل معنا وسنكون سعداء لمساعدتك',
-    email: 'البريد الإلكتروني',
     liveChat: 'الدردشة المباشرة',
     phone: 'الهاتف',
     responseWithin24Hours: 'الرد خلال 24 ساعة',
@@ -295,12 +288,9 @@ const translations = {
     exportData: 'تصدير البيانات',
     refresh: 'تحديث',
     quickActions: 'الإجراءات السريعة',
-    addMovie: 'إضافة فيلم',
     manageUsers: 'إدارة المستخدمين',
     viewAnalytics: 'عرض التحليلات',
     overview: 'نظرة عامة',
-    recentMovies: 'الأفلام الحديثة',
-    recentReviews: 'المراجعات الحديثة',
     systemStatus: 'حالة النظام',
     database: 'قاعدة البيانات',
     api: 'واجهة برمجة التطبيقات',
@@ -311,7 +301,6 @@ const translations = {
     all: 'الكل',
     active: 'نشط',
     inactive: 'غير نشط',
-    admin: 'مدير',
     verified: 'متحقق',
     pending: 'في الانتظار',
     likes: 'إعجابات',
@@ -342,8 +331,6 @@ const translations = {
     // Featured Movies Management
     featuredMoviesManagement: 'إدارة الأفلام المميزة',
     featuredMovies: 'أفلام مميزة',
-    trendingMovies: 'أفلام رائجة',
-    featured: 'مميز',
     trending: 'رائج',
     addToFeatured: 'إضافة للمميزة',
     removeFromFeatured: 'إزالة من المميزة',
@@ -739,3 +726,4 @@ export const useLanguage = () => {
   }
   return context;
 };
+

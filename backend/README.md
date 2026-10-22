@@ -1,5 +1,267 @@
 # **Movie Recommendation System - Backend**
 
+## 🎬 Overview
+This is the backend API for a comprehensive movie recommendation system built with Django REST Framework. The system provides movie discovery, user ratings, personalized recommendations, and user management features.
+
+## 🚀 Quick Start
+
+### Prerequisites
+- Python 3.8+
+- PostgreSQL 12+
+- Redis 6+
+- Node.js 16+ (for frontend)
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd Group-16-2/backend
+   ```
+
+2. **Create virtual environment**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Set up environment variables**
+   Create a `.env` file in the backend directory:
+   ```env
+   # Django Settings
+   DJANGO_SECRET_KEY=your-secret-key-here
+   DJANGO_DEBUG=True
+   DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+
+   # Database Settings
+   DB_NAME=movie_recommendation
+   DB_USER=postgres
+   DB_PASSWORD=postgres
+   DB_HOST=localhost
+   DB_PORT=5432
+
+   # Email Settings
+   EMAIL_HOST=smtp.gmail.com
+   EMAIL_PORT=587
+   EMAIL_USE_TLS=True
+   EMAIL_HOST_USER=your-email@gmail.com
+   EMAIL_HOST_PASSWORD=your-app-password
+
+   # Redis Settings
+   REDIS_URL=redis://localhost:6379/1
+   CELERY_BROKER_URL=redis://localhost:6379/0
+   CELERY_RESULT_BACKEND=redis://localhost:6379/0
+   ```
+
+5. **Set up database**
+   ```bash
+   python manage.py makemigrations
+   python manage.py migrate
+   ```
+
+6. **Create superuser**
+   ```bash
+   python manage.py createsuperuser
+   ```
+
+7. **Load sample data (optional)**
+   ```bash
+   python manage.py import_movies
+   ```
+
+8. **Run the server**
+   ```bash
+   python manage.py runserver
+   ```
+
+## 📁 Project Structure
+
+```
+backend/
+├── config/                 # Django project settings
+│   ├── settings.py        # Main settings file
+│   ├── urls.py           # URL routing
+│   └── wsgi.py           # WSGI configuration
+├── users/                 # User management app
+│   ├── models.py         # User models
+│   ├── views.py          # User views
+│   ├── serializers.py    # User serializers
+│   └── urls.py          # User URLs
+├── movies/               # Movie management app
+│   ├── models.py         # Movie models
+│   ├── views.py          # Movie views
+│   ├── serializers.py    # Movie serializers
+│   └── urls.py          # Movie URLs
+├── ratings/              # Rating system app
+│   ├── models.py         # Rating models
+│   ├── views.py          # Rating views
+│   ├── serializers.py    # Rating serializers
+│   └── urls.py          # Rating URLs
+├── recommendations/      # Recommendation engine
+│   ├── views.py          # Recommendation views
+│   └── urls.py          # Recommendation URLs
+└── requirements.txt      # Python dependencies
+```
+
+## 🔧 Configuration
+
+### Django Settings
+The main configuration is in `config/settings.py`. Key settings include:
+
+- **Database**: PostgreSQL configuration
+- **Authentication**: JWT + Django Allauth
+- **CORS**: Configured for frontend integration
+- **Cache**: Redis-based caching
+- **Email**: SMTP configuration for user verification
+
+### Apps Configuration
+All Django apps are properly configured with `apps.py` files:
+
+- ✅ `users` - User management and authentication
+- ✅ `movies` - Movie catalog and management  
+- ✅ `ratings` - User rating system
+- ✅ `recommendations` - Recommendation engine
+
+## 🛠️ Available Commands
+
+### Django Management Commands
+```bash
+# Database operations
+python manage.py makemigrations
+python manage.py migrate
+python manage.py makemigrations movies
+python manage.py makemigrations ratings
+python manage.py makemigrations users
+
+# Data management
+python manage.py import_movies
+python manage.py createsuperuser
+python manage.py collectstatic
+
+# Development
+python manage.py runserver
+python manage.py shell
+python manage.py check
+```
+
+### Testing
+```bash
+# Run tests
+python manage.py test
+
+# Test specific app
+python manage.py test users
+python manage.py test movies
+python manage.py test ratings
+```
+
+## 🔍 API Endpoints
+
+### Authentication
+- `POST /api/auth/register/` - User registration
+- `POST /api/auth/login/` - User login
+- `POST /api/auth/logout/` - User logout
+- `POST /api/auth/refresh/` - Refresh JWT token
+
+### Movies
+- `GET /api/movies/` - List all movies
+- `GET /api/movies/{id}/` - Get movie details
+- `GET /api/movies/search/` - Search movies
+- `GET /api/movies/genres/` - List genres
+
+### Ratings
+- `GET /api/ratings/` - User's ratings
+- `POST /api/ratings/` - Create rating
+- `PUT /api/ratings/{id}/` - Update rating
+- `DELETE /api/ratings/{id}/` - Delete rating
+
+### Recommendations
+- `GET /api/recommendations/` - Get personalized recommendations
+- `GET /api/recommendations/trending/` - Get trending movies
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+1. **"No installed app with label 'movies'"**
+   - ✅ **Fixed**: All apps are properly registered in `INSTALLED_APPS`
+   - ✅ **Fixed**: All `apps.py` files are created and configured
+
+2. **Deprecated allauth settings**
+   - ✅ **Fixed**: Updated to use `ACCOUNT_LOGIN_METHODS` and `ACCOUNT_SIGNUP_FIELDS`
+
+3. **Database connection issues**
+   - Check PostgreSQL is running
+   - Verify database credentials in `.env`
+   - Run migrations: `python manage.py migrate`
+
+4. **Import errors**
+   - Ensure virtual environment is activated
+   - Install dependencies: `pip install -r requirements.txt`
+   - Check Python path and Django settings
+
+### Debug Mode
+Enable debug mode by setting `DJANGO_DEBUG=True` in your `.env` file for detailed error messages.
+
+## 🚀 Deployment
+
+### Production Settings
+For production deployment:
+
+1. Set `DJANGO_DEBUG=False`
+2. Configure proper `ALLOWED_HOSTS`
+3. Use environment variables for sensitive data
+4. Set up proper database and Redis instances
+5. Configure static file serving
+6. Set up SSL certificates
+
+### Docker Deployment
+Use the provided `Dockerfile` and `docker-compose.yml` for containerized deployment.
+
+## 📊 Monitoring
+
+### Logging
+Logs are configured to write to:
+- Console output (development)
+- `logs/django.log` file (production)
+
+### Health Checks
+- Database: `python manage.py check --database default`
+- Cache: `python manage.py check --deploy`
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+## ✅ Status
+
+**All Django configuration issues have been resolved:**
+
+- ✅ Django settings properly configured
+- ✅ All apps registered and working
+- ✅ Deprecated allauth settings updated
+- ✅ Custom User model configured
+- ✅ Database models properly defined
+- ✅ Requirements.txt created
+- ✅ Apps.py files created for all apps
+
+**The backend is now ready for development and testing!**
+
 This repository contains the backend service for a movie recommendation application. It is built with Django and Django REST Framework, providing a robust API for user management, movie data, and ratings. The system is designed to work alongside a separate FastAPI service that will host the machine learning recommendation model.
 
 ## **Table of Contents**

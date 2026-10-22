@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Search, Filter, SortAsc, Grid, List, Star, Clock, Calendar, TrendingUp, Award, Users, Eye } from 'lucide-react';
 import { Movie } from '../types';
-import { mockMovies } from '../data/mockData';
 import { useLanguage } from '../contexts/LanguageContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import StarRating from '../components/common/StarRating';
@@ -11,6 +10,7 @@ import FadeIn from '../components/common/FadeIn';
 import AnimatedCard from '../components/common/AnimatedCard';
 import StaggeredAnimation from '../components/common/StaggeredAnimation';
 import useDebounce from '../hooks/useDebounce';
+import { searchMovies, getMovies } from '../services/movieService';
 
 const SearchResultsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -22,7 +22,6 @@ const SearchResultsPage: React.FC = () => {
   const [sortBy, setSortBy] = useState('relevance');
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const debouncedQuery = useDebounce(query, 300);
   const [filters, setFilters] = useState({
     genre: '',
     year: '',
@@ -32,14 +31,14 @@ const SearchResultsPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
 
   const query = searchParams.get('q') || '';
-
+  const debouncedQuery = useDebounce(query, 300);
   // Memoized search results for better performance
   const searchResults = useMemo(() => {
-    if (!debouncedQuery) return mockMovies;
+    if (!debouncedQuery) return movies;
     
     const searchTerm = debouncedQuery.toLowerCase();
     
-    return mockMovies.filter(movie => {
+    return movies.filter(movie => {
       // Search in title
       const titleMatch = movie.title.toLowerCase().includes(searchTerm);
       
@@ -78,21 +77,36 @@ const SearchResultsPage: React.FC = () => {
       if (bTitle.includes(searchTerm) && !aTitle.includes(searchTerm)) return 1;
       
       // Sort by rating if no relevance difference
-      return b.averageRating - a.averageRating;
+      return (b.averageRating || 0) - (a.averageRating || 0);
     });
-  }, [debouncedQuery]);
+  }, [debouncedQuery, movies]);
 
   useEffect(() => {
-    // Simulate API call with debounced query
-    setIsLoading(true);
-    const timer = setTimeout(() => {
-      setMovies(searchResults);
-      setFilteredMovies(searchResults);
-      setIsLoading(false);
-    }, 300);
+    const fetchMovies = async () => {
+      setIsLoading(true);
+      try {
+        if (debouncedQuery) {
+          // Perform search
+          const searchResults = await searchMovies(debouncedQuery);
+          setMovies(searchResults);
+          setFilteredMovies(searchResults);
+        } else {
+          // Load all movies if no search query
+          const allMovies = await getMovies();
+          setMovies(allMovies);
+          setFilteredMovies(allMovies);
+        }
+      } catch (error) {
+        console.error('Error fetching movies:', error);
+        setMovies([]);
+        setFilteredMovies([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    return () => clearTimeout(timer);
-  }, [searchResults]);
+    fetchMovies();
+  }, [debouncedQuery]);
 
   useEffect(() => {
     let results = [...movies];

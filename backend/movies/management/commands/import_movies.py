@@ -52,8 +52,8 @@ class Command(BaseCommand):
                     'vote_count': int(row['vote_count']) if pd.notna(row['vote_count']) else None,
                     'popularity': row.get('popularity'),
                     'original_language': row.get('original_language'),
-                    # You might need to add logic to construct the full poster_path URL
-                    'poster_path': row.get('poster_path', ''),
+                    # Construct poster path using tmdbId
+                    'poster_path': f"/{row['tmdbId']}.jpg" if pd.notna(row['tmdbId']) else '',
                 }
             )
 
