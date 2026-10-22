@@ -289,7 +289,7 @@ else:
 SESSION_COOKIE_AGE = 86400  # 24 hours
 
 # Model Service URL
-MODEL_SERVICE_URL = env('MODEL_SERVICE_URL', default='http://127.0.0.1:8001/recommendations/')
+MODEL_SERVICE_URL = env('MODEL_SERVICE_URL', default='http://127.0.0.1:8001/recommendations/' if DEBUG else 'https://movierate-model.onrender.com/recommendations/')
 
 # Logging - Simplified for development
 LOGGING = {
