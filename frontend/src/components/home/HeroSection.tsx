@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Info, Star, ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { Movie } from '../../types';
 import { useApp } from '../../contexts/AppContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { getFeaturedMovies } from '../../services/movieService';
 
 interface HeroSectionProps {
@@ -11,6 +12,7 @@ interface HeroSectionProps {
 
 const HeroSection: React.FC<HeroSectionProps> = ({ movies: propMovies }) => {
   const { movies: contextMovies } = useApp();
+  const { t, language } = useLanguage();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [featuredMovies, setFeaturedMovies] = useState<Movie[]>([]);
   const [imageSrc, setImageSrc] = useState<string>('');
@@ -124,8 +126,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({ movies: propMovies }) => {
           {/* Movie Details */}
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-600/20 border border-red-500/30 text-red-400 text-xs font-semibold mb-4">
-              <span>★ فيلم مميز</span>
-              {currentMovie.isTrending && <span>• رائج الآن</span>}
+              <span>★ {t('featuredMovie')}</span>
+              {currentMovie.isTrending && <span>• {t('trendingNow')}</span>}
             </div>
 
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-white mb-4 leading-tight tracking-tight drop-shadow-md">
@@ -141,7 +143,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ movies: propMovies }) => {
                 <span className="text-gray-300 font-medium">{currentMovie.releaseYear}</span>
               )}
               {currentMovie.runtime > 0 && (
-                <span className="text-gray-400 font-medium">{currentMovie.runtime} دقيقة</span>
+                <span className="text-gray-400 font-medium">{currentMovie.runtime} {t('minutes')}</span>
               )}
               <span className="bg-gray-800/80 border border-gray-700 text-gray-300 px-2 py-0.5 text-xs rounded font-medium">
                 {currentMovie.rating || 'PG-13'}
@@ -162,7 +164,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ movies: propMovies }) => {
             )}
 
             <p className="text-gray-300 text-sm md:text-base leading-relaxed mb-6 max-w-xl line-clamp-3">
-              {currentMovie.synopsis || currentMovie.overview || 'قصة سينمائية مشوقة تأخذك في تجربة لا تُنسى.'}
+              {currentMovie.synopsis || currentMovie.overview || (language === 'ar' ? 'قصة سينمائية مشوقة تأخذك في تجربة لا تُنسى.' : 'An engaging cinematic story taking you on an unforgettable journey.')}
             </p>
 
             <div className="flex flex-wrap gap-3">
@@ -171,7 +173,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ movies: propMovies }) => {
                 className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-red-600/30 transition-all duration-200 hover:-translate-y-0.5"
               >
                 <Info className="w-5 h-5" />
-                <span>التفاصيل الكاملة</span>
+                <span>{t('fullDetails')}</span>
               </Link>
             </div>
           </div>

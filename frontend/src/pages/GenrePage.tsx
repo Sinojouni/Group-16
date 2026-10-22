@@ -9,7 +9,7 @@ import { getMoviesByGenre } from '../services/movieService';
 
 const GenrePage: React.FC = () => {
   const { genre } = useParams<{ genre: string }>();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [movies, setMovies] = useState<Movie[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState('rating');
@@ -66,7 +66,7 @@ const GenrePage: React.FC = () => {
             <h1 className="text-4xl font-bold text-white mb-2">
               {genreTranslations[genre?.toLowerCase() || ''] || genre}
             </h1>
-            <p className="text-gray-400">{movies.length} فيلم متاح</p>
+            <p className="text-gray-400">{movies.length} {t('moviesAvailable')}</p>
           </div>
           
           {/* Sort Filter */}
@@ -77,9 +77,9 @@ const GenrePage: React.FC = () => {
               onChange={(e) => setSortBy(e.target.value)}
               className="bg-gray-800 text-white rounded-md px-3 py-2 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600"
             >
-              <option value="rating">الأعلى تقييماً</option>
-              <option value="year">الأحدث</option>
-              <option value="title">الاسم</option>
+              <option value="rating">{t('highestRated')}</option>
+              <option value="year">{t('newest')}</option>
+              <option value="title">{t('name')}</option>
             </select>
           </div>
         </div>

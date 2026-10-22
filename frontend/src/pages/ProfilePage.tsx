@@ -26,7 +26,7 @@ import StarRating from '../components/common/StarRating';
 const ProfilePage: React.FC = () => {
   const { user, logout, updateProfile } = useAuth();
   const { watchlist } = useApp();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [activeTab, setActiveTab] = useState('overview');
   const [userMovies, setUserMovies] = useState<Movie[]>([]);
   const [userReviews, setUserReviews] = useState<Review[]>([]);
@@ -154,14 +154,14 @@ const ProfilePage: React.FC = () => {
                 className="bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors duration-200 flex items-center gap-2"
               >
                 <Settings className="w-4 h-4" />
-                تعديل الملف
+                {t('editProfile')}
               </button>
               <button
                 onClick={handleLogout}
                 className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200 flex items-center gap-2"
               >
                 <LogOut className="w-4 h-4" />
-                تسجيل الخروج
+                {t('logout')}
               </button>
             </div>
           </div>
@@ -173,7 +173,7 @@ const ProfilePage: React.FC = () => {
             <div className="flex items-center gap-3">
               <Film className="w-8 h-8 text-red-600" />
               <div>
-                <p className="text-gray-400 text-sm">الأفلام المقيمة</p>
+                <p className="text-gray-400 text-sm">{t('ratedMovies')}</p>
                 <p className="text-2xl font-bold text-white">{userMovies.length}</p>
               </div>
             </div>
@@ -183,7 +183,7 @@ const ProfilePage: React.FC = () => {
             <div className="flex items-center gap-3">
               <MessageSquare className="w-8 h-8 text-blue-600" />
               <div>
-                <p className="text-gray-400 text-sm">المراجعات</p>
+                <p className="text-gray-400 text-sm">{t('reviews')}</p>
                 <p className="text-2xl font-bold text-white">{userReviews.length}</p>
               </div>
             </div>
@@ -193,7 +193,7 @@ const ProfilePage: React.FC = () => {
             <div className="flex items-center gap-3">
               <Heart className="w-8 h-8 text-pink-600" />
               <div>
-                <p className="text-gray-400 text-sm">قائمة المفضلة</p>
+                <p className="text-gray-400 text-sm">{t('watchlist')}</p>
                 <p className="text-2xl font-bold text-white">{watchlist.length}</p>
               </div>
             </div>
@@ -203,7 +203,7 @@ const ProfilePage: React.FC = () => {
             <div className="flex items-center gap-3">
               <Award className="w-8 h-8 text-yellow-600" />
               <div>
-                <p className="text-gray-400 text-sm">متوسط التقييم</p>
+                <p className="text-gray-400 text-sm">{t('averageRating')}</p>
                 <p className="text-2xl font-bold text-white">
                   {userReviews.length > 0 
                     ? (userReviews.reduce((sum, review) => sum + review.rating, 0) / userReviews.length).toFixed(1)
@@ -226,7 +226,7 @@ const ProfilePage: React.FC = () => {
                   : 'border-transparent text-gray-400 hover:text-gray-300'
               }`}
             >
-              نظرة عامة
+              {t('overview')}
             </button>
             <button
               onClick={() => setActiveTab('reviews')}
@@ -236,7 +236,7 @@ const ProfilePage: React.FC = () => {
                   : 'border-transparent text-gray-400 hover:text-gray-300'
               }`}
             >
-              مراجعاتي
+              {t('myReviews')}
             </button>
             <button
               onClick={() => setActiveTab('watchlist')}
@@ -246,7 +246,7 @@ const ProfilePage: React.FC = () => {
                   : 'border-transparent text-gray-400 hover:text-gray-300'
               }`}
             >
-              قائمة المفضلة
+              {t('watchlist')}
             </button>
             <button
               onClick={() => setActiveTab('activity')}
@@ -256,7 +256,7 @@ const ProfilePage: React.FC = () => {
                   : 'border-transparent text-gray-400 hover:text-gray-300'
               }`}
             >
-              النشاط الأخير
+              {t('recentActivity')}
             </button>
           </nav>
         </div>
@@ -266,7 +266,7 @@ const ProfilePage: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Recent Reviews */}
             <div className="bg-gray-800 rounded-lg p-6">
-              <h3 className="text-xl font-bold text-white mb-4">آخر المراجعات</h3>
+              <h3 className="text-xl font-bold text-white mb-4">{t('recentReviews')}</h3>
               <div className="space-y-4">
                 {userReviews.slice(0, 3).map((review) => {
                   const movie = mockMovies.find(m => m.id === review.movieId);
@@ -283,7 +283,7 @@ const ProfilePage: React.FC = () => {
                           <div className="flex items-center gap-2">
                             <StarRating rating={review.rating} readonly size="sm" />
                             <span className="text-gray-400 text-sm">
-                              {new Date(review.createdAt).toLocaleDateString('ar')}
+                              {new Date(review.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}
                             </span>
                           </div>
                         </div>
@@ -297,14 +297,14 @@ const ProfilePage: React.FC = () => {
 
             {/* Favorite Genres */}
             <div className="bg-gray-800 rounded-lg p-6">
-              <h3 className="text-xl font-bold text-white mb-4">الأنواع المفضلة</h3>
+              <h3 className="text-xl font-bold text-white mb-4">{t('favoriteGenres')}</h3>
               <div className="flex flex-wrap gap-2">
                 {['Action', 'Drama', 'Comedy', 'Sci-Fi', 'Romance'].map((genre) => (
                   <span
                     key={genre}
                     className="bg-gray-700 text-white px-3 py-1 rounded-full text-sm"
                   >
-                    {genre}
+                    {language === 'ar' ? (t(genre.toLowerCase().replace('-', '')) || genre) : genre}
                   </span>
                 ))}
               </div>
@@ -329,7 +329,7 @@ const ProfilePage: React.FC = () => {
                         <h3 className="text-white font-bold text-lg">{movie?.title}</h3>
                         <StarRating rating={review.rating} readonly size="sm" />
                         <span className="text-gray-400 text-sm">
-                          {new Date(review.createdAt).toLocaleDateString('ar')}
+                          {new Date(review.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}
                         </span>
                       </div>
                       <p className="text-gray-300 mb-4">{review.comment}</p>
@@ -337,7 +337,7 @@ const ProfilePage: React.FC = () => {
                         <button className="text-gray-400 hover:text-white transition-colors duration-200">
                           <Heart className="w-4 h-4" />
                         </button>
-                        <span className="text-gray-400 text-sm">{review.likes} إعجاب</span>
+                        <span className="text-gray-400 text-sm">{review.likes} {t('likesCount')}</span>
                       </div>
                     </div>
                   </div>
@@ -398,22 +398,22 @@ const ProfilePage: React.FC = () => {
         {activeTab === 'activity' && (
           <div className="space-y-4">
             <div className="bg-gray-800 rounded-lg p-6">
-              <h3 className="text-xl font-bold text-white mb-4">النشاط الأخير</h3>
+              <h3 className="text-xl font-bold text-white mb-4">{t('recentActivity')}</h3>
               <div className="space-y-4">
                 <div className="flex items-center gap-3 text-gray-300">
                   <Clock className="w-4 h-4" />
-                  <span>قمت بتقييم فيلم "The Dark Knight" بـ 5 نجوم</span>
-                  <span className="text-gray-500 text-sm">منذ ساعتين</span>
+                  <span>{language === 'ar' ? 'قمت بتقييم فيلم "The Dark Knight" بـ 5 نجوم' : 'You rated "The Dark Knight" 5 stars'}</span>
+                  <span className="text-gray-500 text-sm">{language === 'ar' ? 'منذ ساعتين' : '2 hours ago'}</span>
                 </div>
                 <div className="flex items-center gap-3 text-gray-300">
                   <Heart className="w-4 h-4" />
-                  <span>أضفت فيلم "Inception" إلى قائمة المفضلة</span>
-                  <span className="text-gray-500 text-sm">منذ 5 ساعات</span>
+                  <span>{language === 'ar' ? 'أضفت فيلم "Inception" إلى قائمة المفضلة' : 'Added "Inception" to your watchlist'}</span>
+                  <span className="text-gray-500 text-sm">{language === 'ar' ? 'منذ 5 ساعات' : '5 hours ago'}</span>
                 </div>
                 <div className="flex items-center gap-3 text-gray-300">
                   <MessageSquare className="w-4 h-4" />
-                  <span>كتبت مراجعة لفيلم "Pulp Fiction"</span>
-                  <span className="text-gray-500 text-sm">منذ يوم</span>
+                  <span>{language === 'ar' ? 'كتبت مراجعة لفيلم "Pulp Fiction"' : 'Wrote a review for "Pulp Fiction"'}</span>
+                  <span className="text-gray-500 text-sm">{language === 'ar' ? 'منذ يوم' : '1 day ago'}</span>
                 </div>
               </div>
             </div>
@@ -425,31 +425,31 @@ const ProfilePage: React.FC = () => {
       {isEditing && (
         <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 sm:p-8 w-full max-w-lg shadow-2xl">
-            <h3 className="text-xl font-bold text-white mb-5">{t('editProfile') || 'تعديل الملف الشخصي'}</h3>
+            <h3 className="text-xl font-bold text-white mb-5">{t('editProfile')}</h3>
             
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                    الاسم الأول
+                    {t('firstName')}
                   </label>
                   <input
                     type="text"
                     value={editForm.firstName}
                     onChange={(e) => setEditForm({...editForm, firstName: e.target.value})}
-                    placeholder="الاسم الأول"
+                    placeholder={t('firstName')}
                     className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl p-3 focus:outline-none focus:border-red-500 text-sm"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                    اسم العائلة
+                    {t('lastName')}
                   </label>
                   <input
                     type="text"
                     value={editForm.lastName}
                     onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
-                    placeholder="اسم العائلة"
+                    placeholder={t('lastName')}
                     className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl p-3 focus:outline-none focus:border-red-500 text-sm"
                   />
                 </div>
@@ -457,7 +457,7 @@ const ProfilePage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                  اسم المستخدم
+                  {t('username')}
                 </label>
                 <input
                   type="text"
@@ -469,7 +469,7 @@ const ProfilePage: React.FC = () => {
               
               <div>
                 <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                  البريد الإلكتروني
+                  {t('email')}
                 </label>
                 <input
                   type="email"
@@ -481,14 +481,14 @@ const ProfilePage: React.FC = () => {
               
               <div>
                 <label className="block text-xs font-medium text-gray-300 mb-1.5">
-                  نبذة شخصية
+                  {t('bio')}
                 </label>
                 <textarea
                   value={editForm.bio}
                   onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
                   rows={3}
                   className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl p-3 focus:outline-none focus:border-red-500 text-sm"
-                  placeholder="اكتب نبذة عن نفسك..."
+                  placeholder={t('writeAboutYourself')}
                 />
               </div>
             </div>
@@ -498,13 +498,13 @@ const ProfilePage: React.FC = () => {
                 onClick={handleEditProfile}
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 px-4 rounded-xl font-bold transition-colors duration-200"
               >
-                {t('saveChanges') || 'حفظ التغييرات'}
+                {t('saveChanges')}
               </button>
               <button
                 onClick={() => setIsEditing(false)}
                 className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2.5 px-4 rounded-xl font-bold border border-gray-700 transition-colors duration-200"
               >
-                {t('cancel') || 'إلغاء'}
+                {t('cancel')}
               </button>
             </div>
           </div>

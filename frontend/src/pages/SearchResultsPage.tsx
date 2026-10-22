@@ -14,7 +14,7 @@ import { searchMovies, getMovies } from '../services/movieService';
 
 const SearchResultsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [movies, setMovies] = useState<Movie[]>([]);
   const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -178,11 +178,11 @@ const SearchResultsPage: React.FC = () => {
           <div className="flex items-center gap-3 mb-4">
             <Search className="w-6 h-6 text-red-600" />
             <h1 className="text-3xl font-bold text-white">
-              نتائج البحث عن "{query}"
+              {language === 'ar' ? `نتائج البحث عن "${query}"` : `Search results for "${query}"`}
             </h1>
           </div>
           <p className="text-gray-400">
-            تم العثور على {filteredMovies.length} نتيجة
+            {language === 'ar' ? `تم العثور على ${filteredMovies.length} نتيجة` : `Found ${filteredMovies.length} results`}
           </p>
         </div>
 
@@ -195,7 +195,7 @@ const SearchResultsPage: React.FC = () => {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                 <input
                   type="text"
-                  placeholder="البحث عن أفلام ومسلسلات..."
+                  placeholder={t('search')}
                   className="w-full bg-gray-700 text-white pl-10 pr-4 py-3 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-red-600"
                   defaultValue={query}
                   onChange={(e) => {
@@ -215,7 +215,7 @@ const SearchResultsPage: React.FC = () => {
                 className="bg-gray-700 text-white px-4 py-3 rounded-lg hover:bg-gray-600 transition-colors duration-200 flex items-center gap-2"
               >
                 <Filter className="w-4 h-4" />
-                فلاتر
+                {t('filter')}
               </button>
 
               <select
@@ -223,13 +223,13 @@ const SearchResultsPage: React.FC = () => {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="bg-gray-700 text-white rounded-lg px-4 py-3 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-red-600"
               >
-                <option value="relevance">الأكثر صلة</option>
-                <option value="rating">الأعلى تقييماً</option>
-                <option value="year">الأحدث</option>
-                <option value="title">الاسم</option>
-                <option value="runtime">المدة</option>
-                <option value="trending">الرائج</option>
-                <option value="popular">الأكثر شعبية</option>
+                <option value="relevance">{t('mostRelevant')}</option>
+                <option value="rating">{t('highestRated')}</option>
+                <option value="year">{t('newest')}</option>
+                <option value="title">{t('name')}</option>
+                <option value="runtime">{t('duration')}</option>
+                <option value="trending">{t('trendingBadge')}</option>
+                <option value="popular">{language === 'ar' ? 'الأكثر شعبية' : 'Most Popular'}</option>
               </select>
 
               <div className="flex bg-gray-700 rounded-lg">
@@ -259,14 +259,14 @@ const SearchResultsPage: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    النوع
+                    {language === 'ar' ? 'النوع' : 'Genre'}
                   </label>
                   <select
                     value={filters.genre}
                     onChange={(e) => setFilters({...filters, genre: e.target.value})}
                     className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-red-600"
                   >
-                    <option value="">جميع الأنواع</option>
+                    <option value="">{t('allGenresFilter')}</option>
                     {genres.map(genre => (
                       <option key={genre} value={genre}>{genre}</option>
                     ))}
@@ -275,14 +275,14 @@ const SearchResultsPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    السنة
+                    {language === 'ar' ? 'السنة' : 'Year'}
                   </label>
                   <select
                     value={filters.year}
                     onChange={(e) => setFilters({...filters, year: e.target.value})}
                     className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-red-600"
                   >
-                    <option value="">جميع السنوات</option>
+                    <option value="">{t('allYears')}</option>
                     {years.map(year => (
                       <option key={year} value={year}>{year}</option>
                     ))}
@@ -291,18 +291,18 @@ const SearchResultsPage: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    التقييم الأدنى
+                    {t('minRating')}
                   </label>
                   <select
                     value={filters.rating}
                     onChange={(e) => setFilters({...filters, rating: e.target.value})}
                     className="w-full bg-gray-700 text-white rounded-lg px-3 py-2 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-red-600"
                   >
-                    <option value="">جميع التقييمات</option>
-                    <option value="4">4+ نجوم</option>
-                    <option value="3">3+ نجوم</option>
-                    <option value="2">2+ نجوم</option>
-                    <option value="1">1+ نجوم</option>
+                    <option value="">{t('allRatings')}</option>
+                    <option value="4">{t('fourStars')}</option>
+                    <option value="3">{t('threeStars')}</option>
+                    <option value="2">{t('twoStars')}</option>
+                    <option value="1">{t('oneStar')}</option>
                   </select>
                 </div>
               </div>
@@ -314,15 +314,15 @@ const SearchResultsPage: React.FC = () => {
         {filteredMovies.length === 0 ? (
           <div className="text-center py-12">
             <Search className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">لم يتم العثور على نتائج</h3>
+            <h3 className="text-xl font-bold text-white mb-2">{language === 'ar' ? 'لم يتم العثور على نتائج' : 'No Results Found'}</h3>
             <p className="text-gray-400 mb-6">
-              جرب البحث بكلمات مختلفة أو استخدم الفلاتر لتضييق النتائج
+              {language === 'ar' ? 'جرب البحث بكلمات مختلفة أو استخدم الفلاتر لتضييق النتائج' : 'Try searching with different keywords or use filters to narrow results'}
             </p>
             <Link
               to="/"
               className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors duration-200"
             >
-              العودة للرئيسية
+              {t('backToHome')}
             </Link>
           </div>
         ) : (
@@ -402,7 +402,7 @@ const SearchResultsPage: React.FC = () => {
                         </div>
                         <div className="flex items-center gap-1 text-gray-400">
                           <Clock className="w-4 h-4" />
-                          <span>{movie.runtime} دقيقة</span>
+                          <span>{movie.runtime} {t('minutes')}</span>
                         </div>
                       </div>
                       

@@ -108,7 +108,7 @@ const defaultGenresList: string[] = [
 ];
 
 const GenreBrowser: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [genres, setGenres] = useState<GenreItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -177,13 +177,13 @@ const GenreBrowser: React.FC = () => {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">{t('browseByGenre')}</h2>
-          <p className="text-gray-400 text-xs sm:text-sm mt-1">تصفح الأفلام حسب تصنيفك المفضل</p>
+          <p className="text-gray-400 text-xs sm:text-sm mt-1">{t('browseByGenreSubtitle')}</p>
         </div>
         <Link 
           to="/genres" 
           className="text-xs sm:text-sm text-red-400 hover:text-red-300 font-semibold flex items-center gap-1 transition-colors"
         >
-          <span>عرض الكل</span>
+          <span>{t('viewAll')}</span>
           <ChevronRight className="w-4 h-4 rtl:rotate-180" />
         </Link>
       </div>
@@ -203,10 +203,10 @@ const GenreBrowser: React.FC = () => {
               </div>
               
               <h3 className="text-white font-bold text-sm sm:text-base mb-0.5 tracking-wide group-hover:text-white transition-colors">
-                {genre.nameAr}
+                {language === 'ar' ? genre.nameAr : genre.name}
               </h3>
               <p className="text-gray-400 text-[11px] font-medium uppercase tracking-wider">
-                {genre.name}
+                {language === 'ar' ? genre.name : genre.nameAr}
               </p>
             </Link>
           );

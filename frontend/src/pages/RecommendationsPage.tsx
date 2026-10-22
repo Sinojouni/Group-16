@@ -8,7 +8,7 @@ import { Star, TrendingUp, Sparkles, RefreshCw, Cpu, Award } from 'lucide-react'
 import { useLanguage } from '../contexts/LanguageContext';
 
 const RecommendationsPage: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user, token } = useAuth();
   const navigate = useNavigate();
   const [recommendedMovies, setRecommendedMovies] = useState<Movie[]>([]);
@@ -71,13 +71,13 @@ const RecommendationsPage: React.FC = () => {
             <div className="flex items-center gap-3 mb-2">
               <Sparkles className="w-8 h-8 text-red-500" />
               <h1 className="text-3xl font-black text-white tracking-tight">
-                {isPersonalized ? 'توصيات مخصصة لك' : 'توصيات الذكاء الاصطناعي'}
+                {isPersonalized ? t('personalizedRecommendations') : t('aiRecommendations')}
               </h1>
             </div>
             <p className="text-gray-400 text-sm">
               {isPersonalized 
-                ? 'تم إنشاء هذه التوصيات بناءً على تقييماتك وتفضيلاتك الشخصية عبر نموذج Two-Tower العصبي.'
-                : 'توصيات ذكية مدعومة بنموذج تعلم الآلة (PyTorch Two-Tower Recommendation Model).'}
+                ? (language === 'ar' ? 'تم إنشاء هذه التوصيات بناءً على تقييماتك وتفضيلاتك الشخصية عبر نموذج Two-Tower العصبي.' : 'Generated based on your personal ratings and preferences via the Two-Tower neural model.')
+                : (language === 'ar' ? 'توصيات ذكية مدعومة بنموذج تعلم الآلة (PyTorch Two-Tower Recommendation Model).' : 'Smart recommendations powered by Machine Learning (PyTorch Two-Tower Recommendation Model).')}
             </p>
           </div>
 
@@ -100,11 +100,11 @@ const RecommendationsPage: React.FC = () => {
                 <Cpu className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-white font-bold text-sm">توصيات نموذج الذكاء الاصطناعي الفعالة</h4>
+                <h4 className="text-white font-bold text-sm">{t('aiRecommendationActive')}</h4>
                 <p className="text-gray-400 text-xs">
                   {!user 
-                    ? 'سجّل الدخول وقيّم 5 أفلام لتفعيل التوصيات المخصصة بالكامل لحسابك.' 
-                    : 'قم بتقييم 5 أفلام على الأقل ليتم تدريب النموذج المخصص على ذوقك الشخصي.'}
+                    ? t('signInToPersonalize') 
+                    : t('rateFiveMoviesToPersonalize')}
                 </p>
               </div>
             </div>
@@ -113,14 +113,14 @@ const RecommendationsPage: React.FC = () => {
                 onClick={() => navigate('/login')}
                 className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
               >
-                تسجيل الدخول الآن
+                {t('signInNow')}
               </button>
             ) : (
               <button
                 onClick={() => navigate('/genres')}
                 className="bg-gray-800 hover:bg-gray-700 text-white text-xs font-bold px-4 py-2 rounded-lg border border-gray-700 transition-colors whitespace-nowrap"
               >
-                استكشف وقيّم الأفلام
+                {t('exploreAndRate')}
               </button>
             )}
           </div>
@@ -142,7 +142,7 @@ const RecommendationsPage: React.FC = () => {
               onClick={() => navigate('/')}
               className="bg-red-600 hover:bg-red-700 text-white font-medium py-2.5 px-6 rounded-xl transition-colors inline-flex items-center gap-2"
             >
-              العودة للرئيسية
+              {t('backToHome')}
             </button>
           </div>
         )}

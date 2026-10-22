@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, Star, Play, Film } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const MovieCard = ({ movie, size = 'md', showInfo = true }) => {
   const { addToWatchlist, removeFromWatchlist, watchlist } = useApp();
+  const { t } = useLanguage();
   const isInWatchlist = watchlist.includes(movie.id);
   const [imageError, setImageError] = useState(false);
   const [currentPoster, setCurrentPoster] = useState(movie.poster || '');
@@ -94,7 +96,7 @@ const MovieCard = ({ movie, size = 'md', showInfo = true }) => {
               <button
                 onClick={handleWatchlistToggle}
                 className="bg-black/60 backdrop-blur-md border border-white/20 rounded-full p-2 hover:bg-black/80 transition-all duration-200"
-                title={isInWatchlist ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'}
+                title={isInWatchlist ? t('removeWatchlist') : t('addWatchlist')}
               >
                 {isInWatchlist ? (
                   <Heart className="w-4 h-4 text-red-500 fill-current" />
@@ -116,14 +118,14 @@ const MovieCard = ({ movie, size = 'md', showInfo = true }) => {
           {/* Trending badge */}
           {movie.isTrending && (
             <div className="absolute top-2 left-2 bg-gradient-to-r from-red-600 to-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md z-10">
-              رائج
+              {t('trendingBadge')}
             </div>
           )}
           
           {/* Featured badge */}
           {movie.isFeatured && !movie.isTrending && (
             <div className="absolute top-2 left-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md z-10">
-              مميز
+              {t('featuredBadge')}
             </div>
           )}
         </div>

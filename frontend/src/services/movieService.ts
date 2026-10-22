@@ -67,23 +67,88 @@ const transformMovieData = (backendMovie: any): Movie => {
   };
 };
 
+export interface PaginatedMoviesResult {
+  movies: Movie[];
+  count: number;
+  totalPages: number;
+  currentPage: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
 // Real movie service that connects to Django backend
-export const getMovies = async (filters?: SearchFilters): Promise<Movie[]> => {
+export const getPaginatedMovies = async (page: number = 1, pageSize: number = 24): Promise<PaginatedMoviesResult> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/movies/`);
+    const response = await fetch(`${API_BASE_URL}/movies/?page=${page}&page_size=${pageSize}`);
     if (!response.ok) {
-      throw new Error('Failed to fetch movies');
+      throw new Error('Failed to fetch paginated movies');
     }
     const data = await response.json();
-    const movies = data.results || data;
-    
-    // Transform backend data to frontend format
-    return Array.isArray(movies) 
-      ? movies.map(transformMovieData)
-      : [transformMovieData(movies)];
+    const rawMovies = data.results || (Array.isArray(data) ? data : []);
+    const count = typeof data.count === 'number' ? data.count : rawMovies.length;
+    const totalPages = Math.max(1, Math.ceil(count / pageSize));
+
+    return {
+      movies: rawMovies.map(transformMovieData),
+      count,
+      totalPages,
+      currentPage: page,
+      hasNext: Boolean(data.next),
+      hasPrev: Boolean(data.previous),
+    };
+  } catch (error) {
+    console.error('Error fetching paginated movies:', error);
+    return {
+      movies: [],
+      count: 0,
+      totalPages: 1,
+      currentPage: page,
+      hasNext: false,
+      hasPrev: false,
+    };
+  }
+};
+
+export const getPaginatedTrendingMovies = async (page: number = 1, pageSize: number = 24): Promise<PaginatedMoviesResult> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/movies/trending/?page=${page}&page_size=${pageSize}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch paginated trending movies');
+    }
+    const data = await response.json();
+    const rawMovies = data.results || (Array.isArray(data) ? data : []);
+    const count = typeof data.count === 'number' ? data.count : rawMovies.length;
+    const totalPages = Math.max(1, Math.ceil(count / pageSize));
+
+    return {
+      movies: rawMovies.map(transformMovieData),
+      count,
+      totalPages,
+      currentPage: page,
+      hasNext: Boolean(data.next),
+      hasPrev: Boolean(data.previous),
+    };
+  } catch (error) {
+    console.error('Error fetching paginated trending movies:', error);
+    return {
+      movies: [],
+      count: 0,
+      totalPages: 1,
+      currentPage: page,
+      hasNext: false,
+      hasPrev: false,
+    };
+  }
+};
+
+export const getMovies = async (filters?: SearchFilters): Promise<Movie[]> => {
+  try {
+    const page = filters?.page || 1;
+    const pageSize = filters?.limit || 24;
+    const res = await getPaginatedMovies(page, pageSize);
+    return res.movies;
   } catch (error) {
     console.error('Error fetching movies:', error);
-    // Fallback to empty array if backend is not available
     return [];
   }
 };
@@ -104,19 +169,8 @@ export const getMovieById = async (id: string): Promise<Movie> => {
 
 export const getTrendingMovies = async (): Promise<Movie[]> => {
   try {
-    const response = await fetch(`${API_BASE_URL}/movies/`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch trending movies');
-    }
-    const data = await response.json();
-    const movies = data.results || data;
-    
-    // Filter for trending movies (high popularity)
-    const trendingMovies = Array.isArray(movies) 
-      ? movies.filter((movie: any) => movie.popularity > 50)
-      : [];
-      
-    return trendingMovies.map(transformMovieData);
+    const res = await getPaginatedTrendingMovies(1, 24);
+    return res.movies;
   } catch (error) {
     console.error('Error fetching trending movies:', error);
     return [];
