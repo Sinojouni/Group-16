@@ -1,7 +1,7 @@
 import { Movie } from '../types';
 import { getCinematicPoster, isValidPosterUrl } from './posterService';
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+import { API_BASE_URL } from './apiConfig';
 
 // Helper function to transform backend movie data to frontend format
 export const transformMovieData = (backendMovie: any): Movie => {

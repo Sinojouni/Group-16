@@ -1,4 +1,96 @@
 services:
+  # -------------------------------------------------------------
+  # 1. Frontend: React + Vite served by high-performance Nginx
+  # -------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+      - "5173:80"
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # 2. Backend: Django REST API + Gunicorn
+  # -------------------------------------------------------------
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000 --workers 3 --timeout 120
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_SERVICE_URL=http://model_service:8001/recommendations/
+      - REDIS_URL=redis://cache:6379/1
+      - CELERY_BROKER_URL=redis://cache:6379/0
+      - CELERY_RESULT_BACKEND=redis://cache:6379/0
+      - DB_HOST=db
+      - DJANGO_ALLOWED_HOSTS=*
+      - CORS_ALLOW_ALL_ORIGINS=True
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - cache
+      - model_service
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # 3. Model Service: FastAPI AI/ML Recommendation Service
+  # -------------------------------------------------------------
+  model_service:
+    build:
+      context: ./model_service
+      dockerfile: Dockerfile
+    volumes:
+      - ./model_service:/app
+    ports:
+      - "8001:8001"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # 4. Cache & Task Queue: Redis 7
+  # -------------------------------------------------------------
+  cache:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # 5. Background Tasks: Celery Worker
+  # -------------------------------------------------------------
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: celery -A config worker --loglevel=info
+    volumes:
+      - ./backend:/app
+    environment:
+      - MODEL_SERVICE_URL=http://model_service:8001/recommendations/
+      - REDIS_URL=redis://cache:6379/1
+      - CELERY_BROKER_URL=redis://cache:6379/0
+      - CELERY_RESULT_BACKEND=redis://cache:6379/0
+      - DB_HOST=db
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - cache
+    restart: unless-stopped
+
+  # -------------------------------------------------------------
+  # 6. Database (Optional): PostgreSQL (if USE_POSTGRES=True in .env)
+  # Default uses existing backend/db.sqlite3 for instant zero-config startup
+  # -------------------------------------------------------------
   db:
     image: postgis/postgis:15-3.4
     environment:
@@ -9,51 +101,7 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-
-  cache:
-    image: redis:7
-    ports:
-      - "6379:6379"
-
-  api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
-    volumes:
-      - ./backend:/app
-    ports:
-      - "8000:8000"
-    env_file:
-      - ./backend/.env
-    depends_on:
-      - db
-      - cache
-      - model_service
-
-  worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    command: celery -A config worker --loglevel=info
-    volumes:
-      - ./backend:/app
-    env_file:
-      - ./backend/.env
-    depends_on:
-      - db
-      - cache
-
-  model_service:
-    build:
-      context: ./model_service
-      dockerfile: Dockerfile
-    volumes:
-      - ./model_service:/app
-    ports:
-      - "8001:8001"
-    env_file:
-      - ./backend/.env 
+    restart: unless-stopped
 
 volumes:
   pgdata:

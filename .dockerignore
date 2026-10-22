@@ -1,0 +1,13 @@
+.git
+.github
+*.md
+.vscode
+.idea
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+node_modules
+dist
+logs
+*.log

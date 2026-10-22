@@ -1,6 +1,6 @@
 import { Review, PaginatedResponse } from '../types';
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+import { API_BASE_URL } from './apiConfig';
 
 // Get reviews for a movie
 export const getReviews = async (movieId?: string, page = 1, limit = 10): Promise<PaginatedResponse<Review>> => {

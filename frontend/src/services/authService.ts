@@ -1,7 +1,7 @@
 import { LoginCredentials, RegisterCredentials, User } from '../types';
 import { mockUser, mockAdminUser } from '../data/mockData';
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+import { API_BASE_URL } from './apiConfig';
 
 const formatUserData = (data: any): User => {
   const username = data.username || (data.email ? data.email.split('@')[0] : 'User');

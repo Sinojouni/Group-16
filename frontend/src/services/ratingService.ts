@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+import { API_BASE_URL } from './apiConfig';
 
 // Rate a movie
 export const rateMovie = async (movieId: string, score: number, token: string) => {

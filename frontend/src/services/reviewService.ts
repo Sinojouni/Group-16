@@ -1,7 +1,7 @@
 import { Review, PaginatedResponse } from '../types';
 import { getCinematicPoster, isValidPosterUrl } from './posterService';
 
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+import { API_BASE_URL } from './apiConfig';
 
 // Helper function to transform backend rating data to Review format
 export const transformRatingToReview = (rating: any): Review => {

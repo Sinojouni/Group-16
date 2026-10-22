@@ -22,7 +22,7 @@ SECRET_KEY = env("DJANGO_SECRET_KEY", default="y@b*z$3(n#v-m)c_x!w+q)p_@r*s&t^u(
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DJANGO_DEBUG", default=True)
 
-ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=[])
+ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=['*', 'localhost', '127.0.0.1'])
 
 # Application definition
 INSTALLED_APPS = [
@@ -86,14 +86,29 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# Database with persistent connections (reused up to 10 minutes)
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-        'CONN_MAX_AGE': 600,
+# Database Configuration (supports SQLite out of the box or PostgreSQL for production)
+USE_POSTGRES = env.bool('USE_POSTGRES', default=False)
+
+if USE_POSTGRES:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': env('DB_NAME', default='recomendation'),
+            'USER': env('DB_USER', default='recomendationuser'),
+            'PASSWORD': env('DB_PASSWORD', default='recomendationpass'),
+            'HOST': env('DB_HOST', default='localhost'),
+            'PORT': env('DB_PORT', default='5432'),
+            'CONN_MAX_AGE': 600,
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+            'CONN_MAX_AGE': 600,
+        }
+    }
 
 # In-Memory Cache configuration for sub-millisecond query responses
 CACHES = {
@@ -189,13 +204,21 @@ SIMPLE_JWT = {
 }
 
 # CORS settings
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
+CORS_ALLOW_ALL_ORIGINS = env.bool("CORS_ALLOW_ALL_ORIGINS", default=DEBUG)
+CORS_ALLOWED_ORIGINS = env.list(
+    "CORS_ALLOWED_ORIGINS",
+    default=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+)
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https:\/\/.*\.vercel\.app$",
+    r"^https:\/\/.*\.railway\.app$",
+    r"^https:\/\/.*\.onrender\.com$",
 ]
-
 CORS_ALLOW_CREDENTIALS = True
 
 # Django Allauth settings
