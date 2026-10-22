@@ -14,14 +14,26 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from django.contrib import admin
-from django.urls import include, path
-from django.shortcuts import redirect
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from django.core.management import call_command
+from django.http import JsonResponse
+import io
+
+def run_migrations_view(request):
+    try:
+        out = io.StringIO()
+        call_command('migrate', interactive=False, stdout=out)
+        return JsonResponse({
+            'status': 'success',
+            'message': 'Database migrations completed successfully!',
+            'output': out.getvalue()
+        })
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 urlpatterns = [
     path('', lambda request: redirect('swagger-ui', permanent=False)),
     path('admin/', admin.site.urls),
+    path('api/v1/migrate/', run_migrations_view, name='run-migrations'),
 
     path('api/v1/', include('users.urls')),
     path('api/v1/', include('movies.urls')),
