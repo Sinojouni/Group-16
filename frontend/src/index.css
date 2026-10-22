@@ -1,3 +1,20 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Mobile phone touch & viewport adaptation (zero design change) */
+html {
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
+body {
+  touch-action: manipulation;
+  overscroll-behavior-y: none;
+}
+
+/* Ensure smooth touch scrolling on mobile iOS & Android */
+* {
+  -webkit-overflow-scrolling: touch;
+}
