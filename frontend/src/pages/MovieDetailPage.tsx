@@ -10,6 +10,57 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import { getMovieById } from '../services/movieService';
 import { getReviews, addReview as addReviewService } from '../services/reviewService';
 import { getUserRating, rateMovie } from '../services/ratingService';
+import { getActorPhoto } from '../services/actorService';
+
+// Real Actor Card with authentic high-res photo and smooth fallback
+const ActorCard: React.FC<{ name: string; character?: string }> = ({ name, character }) => {
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    getActorPhoto(name).then((url) => {
+      if (isMounted) {
+        if (url) setPhoto(url);
+        setLoading(false);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [name]);
+
+  const initial = name ? name.trim().charAt(0).toUpperCase() : '?';
+
+  return (
+    <div className="group text-center p-3.5 sm:p-4 rounded-2xl bg-gray-800/60 hover:bg-gray-800/90 border border-gray-700/60 hover:border-red-500/60 transition-all duration-300 hover:-translate-y-1 shadow-md hover:shadow-xl hover:shadow-red-950/30">
+      <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full mx-auto mb-3 overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700/80 group-hover:border-red-500 shadow-lg transition-all duration-300">
+        {photo && !hasError ? (
+          <img
+            src={photo}
+            alt={name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            onError={() => setHasError(true)}
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-red-950/60 to-gray-800 text-red-400 font-black text-xl sm:text-2xl">
+            {initial}
+          </div>
+        )}
+      </div>
+      <p className="text-white font-bold text-xs sm:text-sm group-hover:text-red-400 transition-colors line-clamp-2 leading-tight break-words" dir="auto" title={name}>
+        {name}
+      </p>
+      {character ? (
+        <p className="text-gray-400 text-xs line-clamp-1 mt-1" dir="auto" title={character}>{character}</p>
+      ) : (
+        <p className="text-red-400/90 text-[11px] mt-1 font-medium">طاقم التمثيل</p>
+      )}
+    </div>
+  );
+};
 
 const MovieDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +78,7 @@ const MovieDetailPage: React.FC = () => {
   const { addToWatchlist, removeFromWatchlist, watchlist } = useApp();
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     const loadMovie = async () => {
       if (!id) return;
       
@@ -280,18 +332,18 @@ const MovieDetailPage: React.FC = () => {
             {/* Cast */}
             {movie.cast && movie.cast.length > 0 && (
               <div className="bg-gray-900/60 border border-gray-800/80 rounded-2xl p-6 sm:p-8 backdrop-blur-md">
-                <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">{t('cast')}</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-9 h-9 rounded-xl bg-red-600/20 border border-red-500/30 flex items-center justify-center text-red-500">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl sm:text-2xl font-bold text-white">{t('cast')}</h2>
+                    <p className="text-gray-400 text-xs mt-0.5">طاقم التمثيل والأبطال الحقيقيين للعمل</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 sm:gap-5">
                   {movie.cast.map((member) => (
-                    <div key={member.id} className="text-center p-3 rounded-xl bg-gray-800/70 border border-gray-700/80">
-                      <div className="w-16 h-16 rounded-full mx-auto mb-2.5 overflow-hidden bg-gray-800 border border-gray-700 flex items-center justify-center">
-                        <Users className="w-6 h-6 text-gray-500" />
-                      </div>
-                      <p className="text-white font-semibold text-xs sm:text-sm truncate">{member.name}</p>
-                      {member.character && (
-                        <p className="text-gray-400 text-xs truncate mt-0.5">{member.character}</p>
-                      )}
-                    </div>
+                    <ActorCard key={member.id} name={member.name} character={member.character} />
                   ))}
                 </div>
               </div>

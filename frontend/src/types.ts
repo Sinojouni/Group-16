@@ -72,6 +72,10 @@ export interface Review {
   movieId: string;
   user?: User;
   movie?: Movie;
+  movieTitle?: string;
+  moviePoster?: string;
+  movieReleaseYear?: number;
+  movieVoteAverage?: number;
   username: string;
   userAvatar: string;
   rating: number;

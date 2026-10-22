@@ -2,6 +2,40 @@ import { Review, PaginatedResponse } from '../types';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
+// Helper function to transform backend rating data to Review format
+export const transformRatingToReview = (rating: any): Review => {
+  let poster = '';
+  const posterPath = rating.poster_path || rating.movie_poster || '';
+  if (posterPath && posterPath.startsWith('http')) {
+    poster = posterPath;
+  } else if (posterPath && posterPath.startsWith('/')) {
+    poster = `https://image.tmdb.org/t/p/w500${posterPath}`;
+  } else if (rating.movie_title) {
+    const cached = typeof window !== 'undefined' ? localStorage.getItem(`poster_${rating.movie_title}`) : null;
+    poster = cached || `https://placehold.co/380x560/1f2937/ffffff?text=${encodeURIComponent(rating.movie_title)}`;
+  }
+
+  const username = rating.user_email || rating.username || 'Anonymous';
+
+  return {
+    id: rating.id,
+    userId: rating.user || rating.user_id,
+    movieId: rating.movie_id || rating.movie,
+    movieTitle: rating.movie_title || '',
+    moviePoster: poster,
+    movieReleaseYear: rating.release_year,
+    movieVoteAverage: rating.vote_average,
+    username: username,
+    userAvatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=dc2626&color=fff&size=32`,
+    rating: typeof rating.score === 'number' ? rating.score : parseFloat(rating.score || 0),
+    comment: rating.comment || '',
+    likes: 0,
+    isLiked: false,
+    createdAt: rating.created_at,
+    updatedAt: rating.updated_at,
+  };
+};
+
 // Get reviews for a movie
 export const getReviews = async (movieId?: string, page = 1, limit = 10): Promise<PaginatedResponse<Review>> => {
   try {
@@ -27,30 +61,41 @@ export const getReviews = async (movieId?: string, page = 1, limit = 10): Promis
     }
 
     const data = await response.json();
-    
-    // Transform rating data to review format
-    const transformedReviews = data.results.map((rating: any) => ({
-      id: rating.id,
-      userId: rating.user,
-      movieId: rating.movie,
-      username: rating.user_email || 'Anonymous', // Fallback to Anonymous if user_email is not available
-      userAvatar: `https://ui-avatars.com/api/?name=${rating.user_email || 'A'}&background=dc2626&color=fff&size=32`,
-      rating: rating.score,
-      comment: rating.comment || '',
-      likes: 0, // Backend doesn't have likes yet
-      isLiked: false, // Backend doesn't have likes yet
-      createdAt: rating.created_at,
-    }));
+    const rawList = data.results || (Array.isArray(data) ? data : []);
+    const transformedReviews = rawList.map(transformRatingToReview);
 
     return {
       results: transformedReviews,
-      count: data.count,
+      count: typeof data.count === 'number' ? data.count : transformedReviews.length,
       next: data.next ? (page + 1).toString() : undefined,
       previous: data.previous ? (page - 1).toString() : undefined
     };
   } catch (error) {
     console.error('Error fetching reviews:', error);
     throw error;
+  }
+};
+
+// Get all reviews and ratings submitted by a specific user
+export const getUserReviews = async (userId: string): Promise<Review[]> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/ratings/?user=${userId}&limit=100`);
+    if (!response.ok) {
+      const fallbackRes = await fetch(`${API_BASE_URL}/ratings/user_ratings/?user_id=${userId}`);
+      if (fallbackRes.ok) {
+        const fallbackData = await fallbackRes.json();
+        const list = Array.isArray(fallbackData) ? fallbackData : (fallbackData.value || []);
+        return list.map(transformRatingToReview);
+      }
+      throw new Error('Failed to fetch user reviews');
+    }
+
+    const data = await response.json();
+    const list = data.results || (Array.isArray(data) ? data : []);
+    return list.map(transformRatingToReview);
+  } catch (error) {
+    console.error('Error fetching user reviews:', error);
+    return [];
   }
 };
 
@@ -75,20 +120,7 @@ export const addReview = async (movieId: string, rating: number, comment: string
     }
 
     const data = await response.json();
-    
-    // Transform rating data to review format
-    return {
-      id: data.id,
-      userId: data.user,
-      movieId: data.movie,
-      username: data.user_email || 'Anonymous',
-      userAvatar: `https://ui-avatars.com/api/?name=${data.user_email || 'A'}&background=dc2626&color=fff&size=32`,
-      rating: data.score,
-      comment: data.comment || '',
-      likes: 0,
-      isLiked: false,
-      createdAt: data.created_at,
-    };
+    return transformRatingToReview(data);
   } catch (error) {
     console.error('Error adding review:', error);
     throw error;

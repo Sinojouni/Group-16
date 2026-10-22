@@ -19,7 +19,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { useApp } from '../contexts/AppContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import { Movie, Review } from '../types';
-import { mockMovies, mockReviews } from '../data/mockData';
+import { getUserReviews } from '../services/reviewService';
+import { getMovieById } from '../services/movieService';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import StarRating from '../components/common/StarRating';
 
@@ -30,6 +31,7 @@ const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [userMovies, setUserMovies] = useState<Movie[]>([]);
   const [userReviews, setUserReviews] = useState<Review[]>([]);
+  const [watchlistMovies, setWatchlistMovies] = useState<Movie[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({
@@ -53,21 +55,62 @@ const ProfilePage: React.FC = () => {
   }, [user]);
 
   useEffect(() => {
-    // Simulate API call to get user's data
-    setTimeout(() => {
-      // Get user's rated movies
-      const ratedMovies = mockMovies.filter(movie => 
-        mockReviews.some(review => review.userId === user?.id && review.movieId === movie.id)
-      );
-      setUserMovies(ratedMovies);
+    let isMounted = true;
+    const fetchUserData = async () => {
+      if (!user?.id) {
+        setIsLoading(false);
+        return;
+      }
 
-      // Get user's reviews
-      const userReviewsData = mockReviews.filter(review => review.userId === user?.id);
-      setUserReviews(userReviewsData);
-      
-      setIsLoading(false);
-    }, 500);
-  }, [user?.id]);
+      try {
+        setIsLoading(true);
+
+        // 1. Fetch real user ratings/reviews from backend
+        const reviewsData = await getUserReviews(user.id);
+        if (!isMounted) return;
+        setUserReviews(reviewsData);
+
+        // 2. Fetch movies for the user's reviews
+        const moviePromises = reviewsData.map(async (rev) => {
+          if (!rev.movieId) return null;
+          try {
+            return await getMovieById(rev.movieId);
+          } catch {
+            return null;
+          }
+        });
+        const resolvedMovies = (await Promise.all(moviePromises)).filter((m): m is Movie => m !== null);
+        if (!isMounted) return;
+        setUserMovies(resolvedMovies);
+
+        // 3. Fetch movies for the user's watchlist
+        if (watchlist && watchlist.length > 0) {
+          const watchlistPromises = watchlist.map(async (id) => {
+            try {
+              return await getMovieById(id);
+            } catch {
+              return null;
+            }
+          });
+          const resolvedWatchlist = (await Promise.all(watchlistPromises)).filter((m): m is Movie => m !== null);
+          if (!isMounted) return;
+          setWatchlistMovies(resolvedWatchlist);
+        } else {
+          setWatchlistMovies([]);
+        }
+      } catch (error) {
+        console.error('Error fetching profile data:', error);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, watchlist]);
 
   const handleEditProfile = async () => {
     try {
@@ -89,6 +132,11 @@ const ProfilePage: React.FC = () => {
       </div>
     );
   }
+
+  const ratedMoviesCount = new Set(userReviews.map(r => r.movieId)).size || userReviews.length;
+  const averageRatingValue = userReviews.length > 0
+    ? (userReviews.reduce((sum, review) => sum + review.rating, 0) / userReviews.length).toFixed(1)
+    : '0.0';
 
   return (
     <div className="min-h-screen bg-gray-900">
@@ -134,7 +182,7 @@ const ProfilePage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2 text-gray-300">
                   <Calendar className="w-4 h-4" />
-                  <span>{t('joinedOn')} {user?.dateJoined ? new Date(user.dateJoined).toLocaleDateString() : ''}</span>
+                  <span>{t('joinedOn')} {user?.dateJoined ? new Date(user.dateJoined).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US') : ''}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-300">
                   <Star className="w-4 h-4" />
@@ -174,7 +222,7 @@ const ProfilePage: React.FC = () => {
               <Film className="w-8 h-8 text-red-600" />
               <div>
                 <p className="text-gray-400 text-sm">{t('ratedMovies')}</p>
-                <p className="text-2xl font-bold text-white">{userMovies.length}</p>
+                <p className="text-2xl font-bold text-white">{ratedMoviesCount}</p>
               </div>
             </div>
           </div>
@@ -204,12 +252,7 @@ const ProfilePage: React.FC = () => {
               <Award className="w-8 h-8 text-yellow-600" />
               <div>
                 <p className="text-gray-400 text-sm">{t('averageRating')}</p>
-                <p className="text-2xl font-bold text-white">
-                  {userReviews.length > 0 
-                    ? (userReviews.reduce((sum, review) => sum + review.rating, 0) / userReviews.length).toFixed(1)
-                    : '0.0'
-                  }
-                </p>
+                <p className="text-2xl font-bold text-white">{averageRatingValue}</p>
               </div>
             </div>
           </div>
@@ -217,10 +260,10 @@ const ProfilePage: React.FC = () => {
 
         {/* Tabs */}
         <div className="border-b border-gray-700 mb-8">
-          <nav className="flex space-x-8">
+          <nav className="flex gap-6 sm:gap-8">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'overview'
                   ? 'border-red-600 text-red-600'
                   : 'border-transparent text-gray-400 hover:text-gray-300'
@@ -230,7 +273,7 @@ const ProfilePage: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('reviews')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'reviews'
                   ? 'border-red-600 text-red-600'
                   : 'border-transparent text-gray-400 hover:text-gray-300'
@@ -240,7 +283,7 @@ const ProfilePage: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('watchlist')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'watchlist'
                   ? 'border-red-600 text-red-600'
                   : 'border-transparent text-gray-400 hover:text-gray-300'
@@ -250,7 +293,7 @@ const ProfilePage: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('activity')}
-              className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
                 activeTab === 'activity'
                   ? 'border-red-600 text-red-600'
                   : 'border-transparent text-gray-400 hover:text-gray-300'
@@ -267,32 +310,46 @@ const ProfilePage: React.FC = () => {
             {/* Recent Reviews */}
             <div className="bg-gray-800 rounded-lg p-6">
               <h3 className="text-xl font-bold text-white mb-4">{t('recentReviews')}</h3>
-              <div className="space-y-4">
-                {userReviews.slice(0, 3).map((review) => {
-                  const movie = mockMovies.find(m => m.id === review.movieId);
-                  return (
-                    <div key={review.id} className="border-b border-gray-700 pb-4 last:border-b-0">
-                      <div className="flex items-center gap-3 mb-2">
-                        <img
-                          src={movie?.poster}
-                          alt={movie?.title}
-                          className="w-12 h-16 object-cover rounded"
-                        />
-                        <div className="flex-1">
-                          <h4 className="text-white font-medium">{movie?.title}</h4>
-                          <div className="flex items-center gap-2">
-                            <StarRating rating={review.rating} readonly size="sm" />
-                            <span className="text-gray-400 text-sm">
-                              {new Date(review.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}
-                            </span>
+              {userReviews.length === 0 ? (
+                <p className="text-gray-400 text-sm py-4">{t('noReviewsYet')}</p>
+              ) : (
+                <div className="space-y-4">
+                  {userReviews.slice(0, 3).map((review) => {
+                    const movie = userMovies.find(m => m.id === review.movieId);
+                    const title = movie?.title || review.movieTitle || 'Movie';
+                    const poster = movie?.poster || review.moviePoster || `https://placehold.co/380x560/1f2937/ffffff?text=${encodeURIComponent(title)}`;
+                    return (
+                      <div key={review.id} className="border-b border-gray-700 pb-4 last:border-b-0">
+                        <Link to={`/movie/${review.movieId}`} className="flex items-center gap-3 mb-2 hover:opacity-85 transition-opacity">
+                          <img
+                            src={poster}
+                            alt={title}
+                            className="w-12 h-16 object-cover rounded shadow"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              if (!target.src.includes('placehold.co')) {
+                                target.src = `https://placehold.co/380x560/1f2937/ffffff?text=${encodeURIComponent(title)}`;
+                              }
+                            }}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-white font-medium truncate">{title}</h4>
+                            <div className="flex items-center gap-2 mt-1">
+                              <StarRating rating={review.rating} readonly size="sm" />
+                              <span className="text-gray-400 text-xs">
+                                {review.createdAt ? new Date(review.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US') : ''}
+                              </span>
+                            </div>
                           </div>
-                        </div>
+                        </Link>
+                        {review.comment && (
+                          <p className="text-gray-300 text-sm line-clamp-2 mt-1">{review.comment}</p>
+                        )}
                       </div>
-                      <p className="text-gray-300 text-sm line-clamp-2">{review.comment}</p>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Favorite Genres */}
@@ -314,46 +371,75 @@ const ProfilePage: React.FC = () => {
 
         {activeTab === 'reviews' && (
           <div className="space-y-6">
-            {userReviews.map((review) => {
-              const movie = mockMovies.find(m => m.id === review.movieId);
-              return (
-                <div key={review.id} className="bg-gray-800 rounded-lg p-6">
-                  <div className="flex items-start gap-4">
-                    <img
-                      src={movie?.poster}
-                      alt={movie?.title}
-                      className="w-20 h-28 object-cover rounded"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-white font-bold text-lg">{movie?.title}</h3>
-                        <StarRating rating={review.rating} readonly size="sm" />
-                        <span className="text-gray-400 text-sm">
-                          {new Date(review.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US')}
-                        </span>
-                      </div>
-                      <p className="text-gray-300 mb-4">{review.comment}</p>
-                      <div className="flex items-center gap-4">
-                        <button className="text-gray-400 hover:text-white transition-colors duration-200">
-                          <Heart className="w-4 h-4" />
-                        </button>
-                        <span className="text-gray-400 text-sm">{review.likes} {t('likesCount')}</span>
+            {userReviews.length === 0 ? (
+              <div className="bg-gray-800 rounded-lg p-8 text-center text-gray-400">
+                <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-600" />
+                <p className="text-lg font-medium text-gray-300 mb-1">{t('noReviewsYet')}</p>
+                <p className="text-sm text-gray-500 mb-4">{language === 'ar' ? 'لم تقم بكتابة أي مراجعات أو تقييمات بعد.' : "You haven't written any reviews yet."}</p>
+                <Link to="/" className="inline-block bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors">
+                  {t('discoverMovies')}
+                </Link>
+              </div>
+            ) : (
+              userReviews.map((review) => {
+                const movie = userMovies.find(m => m.id === review.movieId);
+                const title = movie?.title || review.movieTitle || 'Movie';
+                const poster = movie?.poster || review.moviePoster || `https://placehold.co/380x560/1f2937/ffffff?text=${encodeURIComponent(title)}`;
+                return (
+                  <div key={review.id} className="bg-gray-800 rounded-lg p-6">
+                    <div className="flex items-start gap-4">
+                      <Link to={`/movie/${review.movieId}`}>
+                        <img
+                          src={poster}
+                          alt={title}
+                          className="w-20 h-28 object-cover rounded shadow hover:opacity-85 transition-opacity"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (!target.src.includes('placehold.co')) {
+                              target.src = `https://placehold.co/380x560/1f2937/ffffff?text=${encodeURIComponent(title)}`;
+                            }
+                          }}
+                        />
+                      </Link>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap items-center gap-3 mb-2">
+                          <Link to={`/movie/${review.movieId}`} className="text-white font-bold text-lg hover:text-red-500 transition-colors">
+                            {title}
+                          </Link>
+                          <StarRating rating={review.rating} readonly size="sm" />
+                          <span className="text-gray-400 text-sm">
+                            {review.createdAt ? new Date(review.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US') : ''}
+                          </span>
+                        </div>
+                        <p className="text-gray-300 mb-4 whitespace-pre-line">{review.comment || (language === 'ar' ? 'تقييم بدون تعليق' : 'Rating without comment')}</p>
+                        <div className="flex items-center gap-4">
+                          <span className="text-gray-400 text-sm flex items-center gap-1.5">
+                            <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                            <span>{review.rating} / 5</span>
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         )}
 
         {activeTab === 'watchlist' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {watchlist.map((movieId) => {
-              const movie = mockMovies.find(m => m.id === movieId);
-              if (!movie) return null;
-              
-              return (
+          watchlistMovies.length === 0 ? (
+            <div className="bg-gray-800 rounded-lg p-8 text-center text-gray-400">
+              <Heart className="w-12 h-12 mx-auto mb-3 text-gray-600" />
+              <p className="text-lg font-medium text-gray-300 mb-1">{language === 'ar' ? 'قائمة المفضلة فارغة' : 'Your watchlist is empty'}</p>
+              <p className="text-sm text-gray-500 mb-4">{language === 'ar' ? 'أضف أفلامك المفضلة لتظهر هنا.' : 'Add your favorite movies to watch them later.'}</p>
+              <Link to="/" className="inline-block bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-xl text-sm font-medium transition-colors">
+                {t('discoverMovies')}
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {watchlistMovies.map((movie) => (
                 <Link
                   key={movie.id}
                   to={`/movie/${movie.id}`}
@@ -364,6 +450,12 @@ const ProfilePage: React.FC = () => {
                       src={movie.poster}
                       alt={movie.title}
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (!target.src.includes('placehold.co')) {
+                          target.src = `https://placehold.co/380x560/1f2937/ffffff?text=${encodeURIComponent(movie.title)}`;
+                        }
+                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <div className="absolute top-3 right-3 bg-black bg-opacity-80 backdrop-blur-sm rounded-full px-3 py-1 flex items-center gap-1">
@@ -379,7 +471,7 @@ const ProfilePage: React.FC = () => {
                     </h3>
                     <p className="text-gray-400 text-sm mb-3">{movie.releaseYear}</p>
                     <div className="flex flex-wrap gap-1">
-                      {movie.genres.slice(0, 2).map((genre) => (
+                      {(movie.genres || []).slice(0, 2).map((genre) => (
                         <span
                           key={genre}
                           className="bg-gray-700 text-gray-300 px-2 py-1 rounded text-xs"
@@ -390,32 +482,44 @@ const ProfilePage: React.FC = () => {
                     </div>
                   </div>
                 </Link>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )
         )}
 
         {activeTab === 'activity' && (
           <div className="space-y-4">
             <div className="bg-gray-800 rounded-lg p-6">
               <h3 className="text-xl font-bold text-white mb-4">{t('recentActivity')}</h3>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 text-gray-300">
-                  <Clock className="w-4 h-4" />
-                  <span>{language === 'ar' ? 'قمت بتقييم فيلم "The Dark Knight" بـ 5 نجوم' : 'You rated "The Dark Knight" 5 stars'}</span>
-                  <span className="text-gray-500 text-sm">{language === 'ar' ? 'منذ ساعتين' : '2 hours ago'}</span>
+              {userReviews.length === 0 && watchlistMovies.length === 0 ? (
+                <p className="text-gray-400 text-sm">{language === 'ar' ? 'لا يوجد أي نشاط حديث بعد.' : 'No recent activity yet.'}</p>
+              ) : (
+                <div className="space-y-4">
+                  {userReviews.slice(0, 5).map((rev) => (
+                    <div key={rev.id} className="flex items-center gap-3 text-gray-300">
+                      <Star className="w-4 h-4 text-yellow-500 fill-current shrink-0" />
+                      <span className="flex-1">
+                        {language === 'ar'
+                          ? `قمت بتقييم فيلم "${rev.movieTitle || 'الفيلم'}" بـ ${rev.rating} نجوم`
+                          : `You rated "${rev.movieTitle || 'the movie'}" with ${rev.rating} stars`}
+                      </span>
+                      <span className="text-gray-500 text-xs shrink-0">
+                        {rev.createdAt ? new Date(rev.createdAt).toLocaleDateString(language === 'ar' ? 'ar-SA' : 'en-US') : ''}
+                      </span>
+                    </div>
+                  ))}
+                  {watchlistMovies.slice(0, 5).map((m) => (
+                    <div key={`act-wl-${m.id}`} className="flex items-center gap-3 text-gray-300">
+                      <Heart className="w-4 h-4 text-pink-500 fill-current shrink-0" />
+                      <span className="flex-1">
+                        {language === 'ar'
+                          ? `أضفت فيلم "${m.title}" إلى قائمة المفضلة`
+                          : `Added "${m.title}" to your watchlist`}
+                      </span>
+                    </div>
+                  ))}
                 </div>
-                <div className="flex items-center gap-3 text-gray-300">
-                  <Heart className="w-4 h-4" />
-                  <span>{language === 'ar' ? 'أضفت فيلم "Inception" إلى قائمة المفضلة' : 'Added "Inception" to your watchlist'}</span>
-                  <span className="text-gray-500 text-sm">{language === 'ar' ? 'منذ 5 ساعات' : '5 hours ago'}</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-300">
-                  <MessageSquare className="w-4 h-4" />
-                  <span>{language === 'ar' ? 'كتبت مراجعة لفيلم "Pulp Fiction"' : 'Wrote a review for "Pulp Fiction"'}</span>
-                  <span className="text-gray-500 text-sm">{language === 'ar' ? 'منذ يوم' : '1 day ago'}</span>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         )}

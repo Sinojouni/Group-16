@@ -23,6 +23,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import HelpPage from './pages/HelpPage';
 import AboutPage from './pages/AboutPage';
 import RecommendationsPage from './pages/RecommendationsPage';
+import ScrollToTop from './components/common/ScrollToTop';
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
       <AuthProvider>
         <AppProvider>
           <Router>
+            <ScrollToTop />
             <div className="min-h-screen bg-gray-900 flex flex-col">
               <Toaster
                 position="top-right"

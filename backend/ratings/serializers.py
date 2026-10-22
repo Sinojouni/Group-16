@@ -10,6 +10,9 @@ class RatingSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     movie_title = serializers.CharField(source='movie.title', read_only=True)
     movie_id = serializers.CharField(source='movie.id', read_only=True)
+    poster_path = serializers.CharField(source='movie.poster_path', read_only=True)
+    release_year = serializers.IntegerField(source='movie.release_year', read_only=True)
+    vote_average = serializers.FloatField(source='movie.vote_average', read_only=True)
     
     # Allow passing movie as UUID string or tmdb_id in write requests
     movie = serializers.CharField(write_only=True, required=False)
@@ -24,12 +27,15 @@ class RatingSerializer(serializers.ModelSerializer):
             'movie',
             'movie_id',
             'movie_title',
+            'poster_path',
+            'release_year',
+            'vote_average',
             'score',
             'comment',
             'created_at',
             'updated_at',
         ]
-        read_only_fields = ['id', 'user', 'user_email', 'username', 'movie_id', 'movie_title', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'user', 'user_email', 'username', 'movie_id', 'movie_title', 'poster_path', 'release_year', 'vote_average', 'created_at', 'updated_at']
         extra_kwargs = {
             'score': {'validators': []},
             'comment': {'required': False, 'allow_blank': True},
@@ -39,7 +45,12 @@ class RatingSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         # Ensure 'movie' field is also present on output as the movie UUID
         data['movie'] = str(instance.movie_id)
+        data['movie_id'] = str(instance.movie_id)
         data['user'] = str(instance.user_id)
+        if instance.movie:
+            data['poster_path'] = instance.movie.poster_path or ''
+            data['release_year'] = instance.movie.release_year
+            data['vote_average'] = instance.movie.vote_average or 0.0
         if 'comment' not in data or data['comment'] is None:
             data['comment'] = ''
         return data
@@ -52,8 +63,11 @@ class UserRatingSerializer(serializers.ModelSerializer):
     """
     movie_id = serializers.CharField(source='movie.id', read_only=True)
     movie_title = serializers.CharField(source='movie.title', read_only=True)
+    poster_path = serializers.CharField(source='movie.poster_path', read_only=True)
+    release_year = serializers.IntegerField(source='movie.release_year', read_only=True)
+    vote_average = serializers.FloatField(source='movie.vote_average', read_only=True)
     tmdb_id = serializers.IntegerField(source='movie.tmdb_id', read_only=True)
 
     class Meta:
         model = Rating
-        fields = ['id', 'movie_id', 'tmdb_id', 'movie_title', 'score', 'comment', 'created_at', 'updated_at']
+        fields = ['id', 'movie_id', 'tmdb_id', 'movie_title', 'poster_path', 'release_year', 'vote_average', 'score', 'comment', 'created_at', 'updated_at']

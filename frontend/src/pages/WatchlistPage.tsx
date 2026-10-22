@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Heart, Star, Calendar, Clock, Filter, Search, SortAsc, Grid3X3, List, Trash2, Eye } from 'lucide-react';
 import { Movie } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
-import { getMovies } from '../services/movieService';
+import { getMovies, getMovieById } from '../services/movieService';
 import { useApp } from '../contexts/AppContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import StarRating from '../components/common/StarRating';
@@ -23,12 +23,18 @@ const WatchlistPage: React.FC = () => {
 
   useEffect(() => {
     const fetchWatchlistMovies = async () => {
+      if (!watchlist || watchlist.length === 0) {
+        setMovies([]);
+        setFilteredMovies([]);
+        setIsLoading(false);
+        return;
+      }
       try {
         setIsLoading(true);
-        const allMovies = await getMovies();
-        const watchlistMovies = allMovies.filter(movie => watchlist.includes(movie.id));
-        setMovies(watchlistMovies);
-        setFilteredMovies(watchlistMovies);
+        const moviePromises = watchlist.map(id => getMovieById(id).catch(() => null));
+        const loadedMovies = (await Promise.all(moviePromises)).filter((m): m is Movie => m !== null);
+        setMovies(loadedMovies);
+        setFilteredMovies(loadedMovies);
       } catch (error) {
         console.error('Error fetching watchlist movies:', error);
         setMovies([]);

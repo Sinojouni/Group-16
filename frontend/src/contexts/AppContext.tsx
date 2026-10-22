@@ -2,6 +2,7 @@ import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { Movie, Review, AppState, SearchFilters } from '../types';
 import * as movieService from '../services/movieService';
 import * as reviewService from '../services/reviewService';
+import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
 
 interface AppContextType extends AppState {
@@ -28,6 +29,7 @@ type AppAction =
   | { type: 'ADD_REVIEW'; payload: Review }
   | { type: 'UPDATE_REVIEW'; payload: Review }
   | { type: 'DELETE_REVIEW'; payload: string }
+  | { type: 'SET_WATCHLIST'; payload: string[] }
   | { type: 'ADD_TO_WATCHLIST'; payload: string }
   | { type: 'REMOVE_FROM_WATCHLIST'; payload: string };
 
@@ -64,7 +66,15 @@ const appReducer = (state: AppState, action: AppAction): AppState => {
         ...state,
         reviews: state.reviews.filter(review => review.id !== action.payload),
       };
+    case 'SET_WATCHLIST':
+      return {
+        ...state,
+        watchlist: action.payload,
+      };
     case 'ADD_TO_WATCHLIST':
+      if (state.watchlist.includes(action.payload)) {
+        return state;
+      }
       return {
         ...state,
         watchlist: [...state.watchlist, action.payload],
@@ -88,7 +98,27 @@ const initialState: AppState = {
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [state, dispatch] = useReducer(appReducer, initialState);
+  const storageKey = user?.id ? `movie_watchlist_${user.id}` : 'movie_watchlist_guest';
+
+  // Load watchlist from localStorage for this user
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          dispatch({ type: 'SET_WATCHLIST', payload: parsed });
+          return;
+        }
+      }
+      dispatch({ type: 'SET_WATCHLIST', payload: [] });
+    } catch (e) {
+      console.error('Error loading watchlist from localStorage:', e);
+      dispatch({ type: 'SET_WATCHLIST', payload: [] });
+    }
+  }, [storageKey]);
 
   useEffect(() => {
     loadMovies();
@@ -131,8 +161,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addToWatchlist = async (movieId: string) => {
     try {
       await movieService.addToWatchlist(movieId);
+      const isAlreadyIn = state.watchlist.includes(movieId);
+      const updated = isAlreadyIn ? state.watchlist : [...state.watchlist, movieId];
       dispatch({ type: 'ADD_TO_WATCHLIST', payload: movieId });
-      toast.success('Added to watchlist');
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      } catch (_) {}
+      const isAr = localStorage.getItem('language') === 'ar';
+      toast.success(isAr ? 'تمت إضافة الفيلم إلى المفضلة' : 'Added to watchlist');
     } catch (error: any) {
       toast.error(error.message || 'Failed to add to watchlist');
     }
@@ -141,8 +177,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const removeFromWatchlist = async (movieId: string) => {
     try {
       await movieService.removeFromWatchlist(movieId);
+      const updated = state.watchlist.filter(id => id !== movieId);
       dispatch({ type: 'REMOVE_FROM_WATCHLIST', payload: movieId });
-      toast.success('Removed from watchlist');
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      } catch (_) {}
+      const isAr = localStorage.getItem('language') === 'ar';
+      toast.success(isAr ? 'تمت إزالة الفيلم من المفضلة' : 'Removed from watchlist');
     } catch (error: any) {
       toast.error(error.message || 'Failed to remove from watchlist');
     }
