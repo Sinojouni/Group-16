@@ -1,0 +1,34 @@
+services:
+  # -----------------------------------------------------------------
+  # 1. Django REST Backend API
+  # -----------------------------------------------------------------
+  - type: web
+    name: movierate-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    rootDir: backend
+    plan: free
+    envVars:
+      - key: DJANGO_ALLOWED_HOSTS
+        value: "*"
+      - key: CORS_ALLOW_ALL_ORIGINS
+        value: "True"
+      - key: DJANGO_DEBUG
+        value: "False"
+      - key: MODEL_SERVICE_URL
+        value: "https://movierate-model.onrender.com/recommendations/"
+
+  # -----------------------------------------------------------------
+  # 2. FastAPI Model Recommendation Service
+  # -----------------------------------------------------------------
+  - type: web
+    name: movierate-model
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    rootDir: model_service
+    plan: free
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"
