@@ -80,23 +80,23 @@ const Header = () => {
   ];
 
   return (
-    <header className="bg-gray-900/95 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="bg-gray-900/95 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50 transition-all">
+      <div className="w-full px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12">
         {/* Main Header */}
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-18 sm:h-20 gap-3 sm:gap-4">
           
-          {/* Logo Section */}
-          <div className="flex items-center space-x-8">
+          {/* Logo & Navigation Section */}
+          <div className="flex items-center gap-4 sm:gap-6 lg:gap-8 flex-shrink-0">
             <Link 
               to="/" 
-              className="flex items-center space-x-2 text-2xl font-bold text-red-600 hover:text-red-500 transition-colors duration-200"
+              className="flex items-center gap-2.5 text-2xl font-black text-red-600 hover:text-red-500 transition-colors duration-200 tracking-tight"
             >
               <Film className="w-8 h-8" />
               <span>MovieRate</span>
             </Link>
 
             {/* Desktop Navigation */}
-            <nav className="hidden lg:flex items-center space-x-1">
+            <nav className="hidden lg:flex items-center gap-1.5">
               {navigationItems.map((item) => {
                 const Icon = item.icon;
                 const isCurrentActive = item.exact ? isActive(item.path) : 
@@ -107,10 +107,10 @@ const Header = () => {
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
                       isCurrentActive 
-                        ? 'bg-red-600 text-white' 
-                        : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                        ? 'bg-red-600 text-white shadow-md shadow-red-600/30' 
+                        : 'text-gray-300 hover:text-white hover:bg-gray-800/80'
                     }`}
                   >
                     <Icon className="w-4 h-4" />
@@ -121,22 +121,22 @@ const Header = () => {
             </nav>
           </div>
 
-          {/* Search Section */}
-          <div className="flex-1 max-w-lg mx-2 sm:mx-4" ref={searchRef}>
+          {/* Search Section (Lengthened & Stretched) */}
+          <div className="flex-1 max-w-xl xl:max-w-2xl mx-3 sm:mx-6" ref={searchRef}>
             <form onSubmit={handleSearch} className="relative">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute start-3.5 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 <input
                   type="text"
                   placeholder={t('search')}
                   value={searchQuery}
                   onChange={handleSearchInputChange}
-                  className="w-full bg-gray-800/50 text-white placeholder-gray-400 rounded-xl py-2 sm:py-3 pl-10 pr-4 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 focus:bg-gray-800 transition-all duration-200 text-sm sm:text-base"
+                  className="w-full bg-gray-800/60 text-white placeholder-gray-400 rounded-xl py-2.5 sm:py-3 ps-10 pe-4 border border-gray-700/80 focus:outline-none focus:ring-2 focus:ring-red-600 focus:border-red-600 focus:bg-gray-800 transition-all duration-200 text-sm sm:text-base shadow-inner"
                 />
                 
                 {/* Search Suggestions */}
                 {showSearchSuggestions && searchQuery && (
-                  <div className="absolute top-full left-0 right-0 mt-2 bg-gray-800 rounded-lg shadow-xl border border-gray-700 z-50 max-h-60 overflow-y-auto">
+                  <div className="absolute top-full start-0 end-0 mt-2 bg-gray-800 rounded-xl shadow-2xl border border-gray-700 z-50 max-h-60 overflow-y-auto">
                     {searchSuggestions
                       .filter(suggestion => 
                         suggestion.toLowerCase().includes(searchQuery.toLowerCase())
@@ -146,7 +146,7 @@ const Header = () => {
                         <button
                           key={index}
                           onClick={() => handleSuggestionClick(suggestion)}
-                          className="w-full text-left px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 transition-colors duration-200 flex items-center gap-3"
+                          className="w-full text-start px-4 py-3 text-gray-300 hover:text-white hover:bg-gray-700 transition-colors duration-200 flex items-center gap-3"
                         >
                           <Search className="w-4 h-4 text-gray-400" />
                           <span>{suggestion}</span>
@@ -159,16 +159,16 @@ const Header = () => {
           </div>
 
           {/* User Actions Section */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 flex-shrink-0">
             
             {/* Language Toggle */}
             <button
               onClick={toggleLanguage}
-              className="flex items-center gap-2 p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-all duration-200"
+              className="flex items-center gap-1.5 px-3 py-2 text-gray-300 hover:text-white hover:bg-gray-800/80 rounded-xl border border-gray-800 hover:border-gray-700 transition-all duration-200"
               title={language === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
             >
               <Globe className="w-4 h-4" />
-              <span className="text-sm font-medium">
+              <span className="text-sm font-semibold">
                 {language === 'ar' ? 'EN' : 'ع'}
               </span>
             </button>
@@ -180,26 +180,26 @@ const Header = () => {
                 <div className="relative">
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center space-x-2 p-2 text-gray-300 hover:text-white hover:bg-gray-800 rounded-lg transition-all duration-200"
+                    className="flex items-center gap-2 p-1.5 sm:p-2 text-gray-300 hover:text-white hover:bg-gray-800/80 rounded-xl transition-all duration-200"
                   >
                     <img
                       src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.username}&background=dc2626&color=fff&size=32`}
                       alt={user?.username}
-                      className="w-8 h-8 rounded-full object-cover border-2 border-gray-700"
+                      className="w-8 h-8 rounded-full object-cover border-2 border-red-500/50 shadow-md"
                     />
-                    <span className="hidden md:block text-sm font-medium">
+                    <span className="hidden md:block text-sm font-semibold max-w-[120px] truncate">
                       {user?.username}
                     </span>
-                    <ChevronDown className="w-4 h-4" />
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
                   </button>
 
                   {/* User Dropdown Menu */}
                   {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-56 bg-gray-800 rounded-xl shadow-xl border border-gray-700 py-2 z-50">
+                    <div className="absolute end-0 mt-2 w-56 bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-800 py-2 z-50">
                       {/* User Info */}
-                      <div className="px-4 py-3 border-b border-gray-700">
-                        <p className="text-white font-medium">{user?.username}</p>
-                        <p className="text-gray-400 text-sm">{user?.email}</p>
+                      <div className="px-4 py-3 border-b border-gray-800">
+                        <p className="text-white font-bold truncate">{user?.username}</p>
+                        <p className="text-gray-400 text-xs truncate">{user?.email}</p>
                       </div>
 
                       {/* Menu Items */}
@@ -207,18 +207,18 @@ const Header = () => {
                         <Link
                           to="/profile"
                           onClick={() => setShowUserMenu(false)}
-                          className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors duration-200"
+                          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800/80 transition-colors duration-200"
                         >
-                          <User className="w-4 h-4" />
+                          <User className="w-4 h-4 text-red-500" />
                           <span>{t('profile')}</span>
                         </Link>
                         
                         <Link
                           to="/settings"
                           onClick={() => setShowUserMenu(false)}
-                          className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-700 transition-colors duration-200"
+                          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-300 hover:text-white hover:bg-gray-800/80 transition-colors duration-200"
                         >
-                          <Settings className="w-4 h-4" />
+                          <Settings className="w-4 h-4 text-gray-400" />
                           <span>{t('settings')}</span>
                         </Link>
 
@@ -227,7 +227,7 @@ const Header = () => {
                           <Link
                             to="/admin"
                             onClick={() => setShowUserMenu(false)}
-                            className="flex items-center space-x-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors duration-200"
+                            className="flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors duration-200"
                           >
                             <Shield className="w-4 h-4" />
                             <span>{t('adminDashboard')}</span>
@@ -236,10 +236,10 @@ const Header = () => {
                       </div>
 
                       {/* Logout */}
-                      <div className="border-t border-gray-700 pt-2">
+                      <div className="border-t border-gray-800 pt-2">
                         <button
                           onClick={handleLogout}
-                          className="flex items-center space-x-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-gray-700 transition-colors duration-200 w-full text-left"
+                          className="flex items-center gap-3 px-4 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-950/30 transition-colors duration-200 w-full text-start font-medium"
                         >
                           <LogOut className="w-4 h-4" />
                           <span>{t('logout')}</span>
@@ -251,16 +251,16 @@ const Header = () => {
               </>
             ) : (
               /* Guest User Actions */
-              <div className="hidden md:flex items-center space-x-3">
+              <div className="hidden md:flex items-center gap-2.5">
                 <Link
                   to="/login"
-                  className="text-gray-300 hover:text-white transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-gray-800"
+                  className="text-gray-300 hover:text-white transition-colors duration-200 px-4 py-2 rounded-xl hover:bg-gray-800/80 font-medium text-sm"
                 >
                   {t('login')}
                 </Link>
                 <Link
                   to="/register"
-                  className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors duration-200 font-medium"
+                  className="bg-red-600 text-white px-5 py-2.5 rounded-xl hover:bg-red-700 shadow-md shadow-red-600/30 hover:shadow-red-600/50 transition-all duration-200 font-bold text-sm"
                 >
                   {t('register')}
                 </Link>

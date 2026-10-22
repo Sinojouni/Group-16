@@ -22,13 +22,19 @@ import {
   Sparkles,
   Palette,
   Video,
-  Check
+  Check,
+  Swords,
+  Users,
+  Landmark,
+  Music,
+  Skull,
+  Tv,
+  Globe
 } from 'lucide-react';
-import { Movie, Genre } from '../types';
+import { Movie } from '../types';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import StarRating from '../components/common/StarRating';
 import StaggeredAnimation from '../components/common/StaggeredAnimation';
 import MovieCard from '../components/common/MovieCard';
 import { getMovies } from '../services/movieService';
@@ -44,7 +50,7 @@ const GenresPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showMovies, setShowMovies] = useState(false);
 
-  // All available genres with Lucide vector icons and refined color schemes (No emojis)
+  // All available genres with Lucide vector icons and refined color schemes (Zero emojis)
   const allGenres = [
     { 
       name: 'Action', 
@@ -53,6 +59,14 @@ const GenresPage: React.FC = () => {
       accent: 'red',
       iconBox: 'bg-red-500/10 text-red-500 border-red-500/20 group-hover:bg-red-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]',
       glow: 'group-hover:border-red-500/50'
+    },
+    { 
+      name: 'Adventure', 
+      nameAr: 'مغامرة', 
+      Icon: Compass, 
+      accent: 'emerald',
+      iconBox: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 group-hover:bg-emerald-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]',
+      glow: 'group-hover:border-emerald-500/50'
     },
     { 
       name: 'Comedy', 
@@ -69,6 +83,14 @@ const GenresPage: React.FC = () => {
       accent: 'blue',
       iconBox: 'bg-blue-500/10 text-blue-400 border-blue-500/20 group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]',
       glow: 'group-hover:border-blue-500/50'
+    },
+    { 
+      name: 'Crime', 
+      nameAr: 'جريمة', 
+      Icon: ShieldAlert, 
+      accent: 'orange',
+      iconBox: 'bg-orange-500/10 text-orange-400 border-orange-500/20 group-hover:bg-orange-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(249,115,22,0.4)]',
+      glow: 'group-hover:border-orange-500/50'
     },
     { 
       name: 'Horror', 
@@ -98,25 +120,9 @@ const GenresPage: React.FC = () => {
       name: 'Thriller', 
       nameAr: 'إثارة', 
       Icon: Zap, 
-      accent: 'orange',
-      iconBox: 'bg-orange-500/10 text-orange-400 border-orange-500/20 group-hover:bg-orange-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(249,115,22,0.4)]',
-      glow: 'group-hover:border-orange-500/50'
-    },
-    { 
-      name: 'Crime', 
-      nameAr: 'جريمة', 
-      Icon: ShieldAlert, 
       accent: 'rose',
       iconBox: 'bg-rose-500/10 text-rose-400 border-rose-500/20 group-hover:bg-rose-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(244,63,94,0.4)]',
       glow: 'group-hover:border-rose-500/50'
-    },
-    { 
-      name: 'Adventure', 
-      nameAr: 'مغامرة', 
-      Icon: Compass, 
-      accent: 'emerald',
-      iconBox: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 group-hover:bg-emerald-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]',
-      glow: 'group-hover:border-emerald-500/50'
     },
     { 
       name: 'Fantasy', 
@@ -135,25 +141,112 @@ const GenresPage: React.FC = () => {
       glow: 'group-hover:border-indigo-500/50'
     },
     { 
+      name: 'Mystery', 
+      nameAr: 'غموض', 
+      Icon: Skull, 
+      accent: 'slate',
+      iconBox: 'bg-slate-500/10 text-slate-400 border-slate-500/20 group-hover:bg-slate-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(100,116,139,0.4)]',
+      glow: 'group-hover:border-slate-500/50'
+    },
+    { 
+      name: 'Family', 
+      nameAr: 'عائلي', 
+      Icon: Users, 
+      accent: 'yellow',
+      iconBox: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20 group-hover:bg-yellow-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(234,179,8,0.4)]',
+      glow: 'group-hover:border-yellow-500/50'
+    },
+    { 
+      name: 'History', 
+      nameAr: 'تاريخي', 
+      Icon: Landmark, 
+      accent: 'amber',
+      iconBox: 'bg-amber-600/10 text-amber-500 border-amber-600/20 group-hover:bg-amber-700 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(217,119,6,0.4)]',
+      glow: 'group-hover:border-amber-600/50'
+    },
+    { 
+      name: 'War', 
+      nameAr: 'حرب', 
+      Icon: Swords, 
+      accent: 'stone',
+      iconBox: 'bg-stone-500/10 text-stone-400 border-stone-500/20 group-hover:bg-stone-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(120,113,108,0.4)]',
+      glow: 'group-hover:border-stone-500/50'
+    },
+    { 
+      name: 'Western', 
+      nameAr: 'ويسترن', 
+      Icon: Compass, 
+      accent: 'amber',
+      iconBox: 'bg-yellow-600/10 text-yellow-500 border-yellow-600/20 group-hover:bg-yellow-700 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(202,138,4,0.4)]',
+      glow: 'group-hover:border-yellow-600/50'
+    },
+    { 
+      name: 'Music', 
+      nameAr: 'موسيقى', 
+      Icon: Music, 
+      accent: 'fuchsia',
+      iconBox: 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20 group-hover:bg-fuchsia-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(217,70,239,0.4)]',
+      glow: 'group-hover:border-fuchsia-500/50'
+    },
+    { 
       name: 'Documentary', 
       nameAr: 'وثائقي', 
       Icon: Video, 
       accent: 'teal',
       iconBox: 'bg-teal-500/10 text-teal-400 border-teal-500/20 group-hover:bg-teal-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(20,184,166,0.4)]',
       glow: 'group-hover:border-teal-500/50'
+    },
+    { 
+      name: 'Foreign', 
+      nameAr: 'أجنبي', 
+      Icon: Globe, 
+      accent: 'sky',
+      iconBox: 'bg-sky-500/10 text-sky-400 border-sky-500/20 group-hover:bg-sky-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(14,165,233,0.4)]',
+      glow: 'group-hover:border-sky-500/50'
+    },
+    { 
+      name: 'TV Movie', 
+      nameAr: 'فيلم تلفزيوني', 
+      Icon: Tv, 
+      accent: 'gray',
+      iconBox: 'bg-gray-500/10 text-gray-400 border-gray-500/20 group-hover:bg-gray-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(107,114,128,0.4)]',
+      glow: 'group-hover:border-gray-500/50'
     }
   ];
 
-  // Get user's viewing history to suggest genres (simulated)
+  // Helper to safely get genre object with guaranteed fallback
+  const getSafeGenreObj = (genreName: string) => {
+    const gl = (genreName || '').toLowerCase().trim();
+    const found = allGenres.find(g => {
+      const ag = g.name.toLowerCase();
+      return ag === gl || 
+        (gl === 'science fiction' && ag === 'sci-fi') ||
+        (gl === 'sci-fi' && ag === 'science fiction');
+    });
+    if (found) return found;
+
+    return {
+      name: genreName,
+      nameAr: t(gl) || genreName,
+      Icon: Film,
+      accent: 'red',
+      iconBox: 'bg-red-500/10 text-red-500 border-red-500/20 group-hover:bg-red-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]',
+      glow: 'group-hover:border-red-500/50'
+    };
+  };
+
+  // Get user's viewing history to suggest genres safely
   const getUserViewingHistory = () => {
     if (!user) return [];
-    const userMovies = movies.filter(movie => (movie.averageRating || 0) > 4.0);
+    const userMovies = movies.filter(movie => (movie.averageRating || 0) >= 3.5);
     const genreCounts: { [key: string]: number } = {};
     
     userMovies.forEach(movie => {
       if (Array.isArray(movie.genres)) {
         movie.genres.forEach(genre => {
-          genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+          if (genre && typeof genre === 'string') {
+            genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+          }
         });
       }
     });
@@ -169,7 +262,7 @@ const GenresPage: React.FC = () => {
     const fetchMovies = async () => {
       try {
         setIsLoading(true);
-        const allMovies = await getMovies();
+        const allMovies = await getMovies({ limit: 100 });
         setMovies(allMovies);
       } catch (error) {
         console.error('Error fetching movies:', error);
@@ -187,16 +280,23 @@ const GenresPage: React.FC = () => {
 
     // Filter by genre
     if (selectedGenre) {
+      const targetLower = selectedGenre.toLowerCase().trim();
       results = results.filter(movie => 
-        Array.isArray(movie.genres) && movie.genres.some(genre => genre.toLowerCase() === selectedGenre.toLowerCase())
+        Array.isArray(movie.genres) && movie.genres.some(genre => {
+          const gl = (genre || '').toLowerCase().trim();
+          return gl === targetLower || 
+            (targetLower === 'sci-fi' && gl === 'science fiction') ||
+            (targetLower === 'science fiction' && gl === 'sci-fi');
+        })
       );
     }
 
     // Filter by search query
     if (searchQuery) {
+      const q = searchQuery.toLowerCase().trim();
       results = results.filter(movie =>
-        movie.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (Array.isArray(movie.genres) && movie.genres.some(genre => genre.toLowerCase().includes(searchQuery.toLowerCase())))
+        (movie.title && movie.title.toLowerCase().includes(q)) ||
+        (Array.isArray(movie.genres) && movie.genres.some(genre => (genre || '').toLowerCase().includes(q)))
       );
     }
 
@@ -209,7 +309,7 @@ const GenresPage: React.FC = () => {
         results.sort((a, b) => (b.releaseYear || 0) - (a.releaseYear || 0));
         break;
       case 'title':
-        results.sort((a, b) => a.title.localeCompare(b.title));
+        results.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
         break;
       case 'runtime':
         results.sort((a, b) => (b.runtime || 0) - (a.runtime || 0));
@@ -222,7 +322,7 @@ const GenresPage: React.FC = () => {
   }, [movies, selectedGenre, searchQuery, sortBy]);
 
   const handleGenreClick = (genreName: string) => {
-    if (selectedGenre === genreName && showMovies) {
+    if (selectedGenre.toLowerCase() === genreName.toLowerCase() && showMovies) {
       setSelectedGenre('');
       setShowMovies(false);
     } else {
@@ -238,8 +338,14 @@ const GenresPage: React.FC = () => {
   };
 
   const getGenreStats = (genreName: string) => {
+    const genreLower = (genreName || '').toLowerCase().trim();
     const genreMovies = movies.filter(movie => 
-      Array.isArray(movie.genres) && movie.genres.some(genre => genre.toLowerCase() === genreName.toLowerCase())
+      Array.isArray(movie.genres) && movie.genres.some(genre => {
+        const gl = (genre || '').toLowerCase().trim();
+        return gl === genreLower || 
+          (genreLower === 'sci-fi' && gl === 'science fiction') ||
+          (genreLower === 'science fiction' && gl === 'sci-fi');
+      })
     );
     const avgRating = genreMovies.length > 0 
       ? genreMovies.reduce((sum, movie) => sum + (movie.averageRating || 0), 0) / genreMovies.length 
@@ -318,9 +424,9 @@ const GenresPage: React.FC = () => {
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {userFavoriteGenres.map((genreName) => {
-                const genre = allGenres.find(g => g.name === genreName);
+                const genre = getSafeGenreObj(genreName);
                 const stats = getGenreStats(genreName);
-                const IconComponent = genre.Icon;
+                const IconComponent = genre.Icon || Film;
                 
                 return (
                   <button
@@ -366,11 +472,11 @@ const GenresPage: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4">
             {allGenres.map((genre, index) => {
               const stats = getGenreStats(genre.name);
-              const isSelected = selectedGenre === genre.name;
-              const IconComponent = genre.Icon;
+              const isSelected = selectedGenre.toLowerCase() === genre.name.toLowerCase();
+              const IconComponent = genre.Icon || Film;
               
               return (
-                <StaggeredAnimation key={genre.name} direction="up" staggerDelay={index * 40} duration={400}>
+                <StaggeredAnimation key={genre.name} direction="up" staggerDelay={index * 25} duration={350}>
                   <button
                     onClick={() => handleGenreClick(genre.name)}
                     className={`w-full group relative text-center rounded-2xl p-4 sm:p-5 transition-all duration-300 border backdrop-blur-md flex flex-col items-center justify-between ${
@@ -423,10 +529,10 @@ const GenresPage: React.FC = () => {
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-800">
                 <div className="flex items-center gap-4">
                   {(() => {
-                    const matched = allGenres.find(g => g.name === selectedGenre);
-                    const MatchedIcon = matched?.Icon || Film;
+                    const matched = getSafeGenreObj(selectedGenre);
+                    const MatchedIcon = matched.Icon || Film;
                     return (
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${matched?.iconBox || 'bg-red-600/20 text-red-500 border-red-500/30'}`}>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${matched.iconBox || 'bg-red-600/20 text-red-500 border-red-500/30'}`}>
                         <MatchedIcon className="w-6 h-6" />
                       </div>
                     );
@@ -434,11 +540,11 @@ const GenresPage: React.FC = () => {
                   <div>
                     <h2 className="text-2xl font-bold text-white">
                       {language === 'ar' 
-                        ? `أفلام ${allGenres.find(g => g.name === selectedGenre)?.nameAr}` 
-                        : `${selectedGenre} Movies`}
+                        ? `أفلام ${getSafeGenreObj(selectedGenre).nameAr}` 
+                        : `${getSafeGenreObj(selectedGenre).name} Movies`}
                     </h2>
                     <p className="text-gray-400 text-xs sm:text-sm">
-                      {allGenres.find(g => g.name === selectedGenre)?.name} • {filteredMovies.length} {t('moviesAvailable')}
+                      {getSafeGenreObj(selectedGenre).name} • {filteredMovies.length} {t('moviesAvailable')}
                     </p>
                   </div>
                 </div>
@@ -463,7 +569,7 @@ const GenresPage: React.FC = () => {
                 </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5">
-                  {filteredMovies.slice(0, 18).map((movie) => (
+                  {filteredMovies.slice(0, 24).map((movie) => (
                     <MovieCard key={movie.id} movie={movie} size="md" />
                   ))}
                 </div>

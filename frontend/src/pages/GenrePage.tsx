@@ -20,7 +20,22 @@ const GenrePage: React.FC = () => {
     drama: t('drama'),
     horror: t('horror'),
     'sci-fi': t('sciFi'),
+    'science fiction': t('sciFi'),
     romance: t('romance'),
+    thriller: t('thriller'),
+    crime: t('crime'),
+    adventure: t('adventure'),
+    fantasy: t('fantasy'),
+    animation: t('animation'),
+    documentary: t('documentary'),
+    mystery: 'غموض',
+    family: 'عائلي',
+    history: 'تاريخي',
+    war: 'حرب',
+    western: 'ويسترن',
+    music: 'موسيقى',
+    foreign: 'أجنبي',
+    'tv movie': 'فيلم تلفزيوني',
   };
 
   useEffect(() => {

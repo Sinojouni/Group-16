@@ -1,9 +1,10 @@
 import { Movie, SearchFilters } from '../types';
+import { getCinematicPoster, isValidPosterUrl } from './posterService';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 // Helper function to transform backend movie data to frontend format
-const transformMovieData = (backendMovie: any): Movie => {
+export const transformMovieData = (backendMovie: any): Movie => {
   let posterUrl = '';
   let backdropUrl = '';
 
@@ -16,15 +17,21 @@ const transformMovieData = (backendMovie: any): Movie => {
     posterUrl = `https://image.tmdb.org/t/p/w500${backendMovie.poster_path}`;
     backdropUrl = `https://image.tmdb.org/t/p/w1280${backendMovie.poster_path}`;
   } else {
-    // Fallback: check localStorage cache or clean placeholder
+    // Fallback: check localStorage cache or cinematic artwork
     const title = backendMovie.title || 'Movie';
-    const cached = typeof window !== 'undefined' ? localStorage.getItem(`poster_${title}`) : null;
-    if (cached) {
+    let cached = null;
+    try {
+      if (typeof window !== 'undefined') {
+        cached = localStorage.getItem(`omdb_poster_${title}`) || localStorage.getItem(`poster_${title}`);
+      }
+    } catch (_) {}
+
+    if (cached && isValidPosterUrl(cached)) {
       posterUrl = cached;
       backdropUrl = cached;
     } else {
-      posterUrl = `https://placehold.co/380x560/1f2937/ffffff?text=${encodeURIComponent(title)}`;
-      backdropUrl = `https://placehold.co/1280x720/1f2937/ffffff?text=${encodeURIComponent(title)}`;
+      posterUrl = getCinematicPoster(title, backendMovie.genres, backendMovie.release_year);
+      backdropUrl = posterUrl;
     }
   }
 
@@ -109,7 +116,17 @@ export const getPaginatedMovies = async (page: number = 1, pageSize: number = 24
   }
 };
 
+// In-Memory cache for high-scale performance (minimizes redundant network calls)
+const movieDetailCache = new Map<string, { data: Movie; expiresAt: number }>();
+const trendingCache = new Map<string, { data: PaginatedMoviesResult; expiresAt: number }>();
+
 export const getPaginatedTrendingMovies = async (page: number = 1, pageSize: number = 24): Promise<PaginatedMoviesResult> => {
+  const cacheKey = `${page}_${pageSize}`;
+  const cached = trendingCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data;
+  }
+
   try {
     const response = await fetch(`${API_BASE_URL}/movies/trending/?page=${page}&page_size=${pageSize}`);
     if (!response.ok) {
@@ -120,7 +137,7 @@ export const getPaginatedTrendingMovies = async (page: number = 1, pageSize: num
     const count = typeof data.count === 'number' ? data.count : rawMovies.length;
     const totalPages = Math.max(1, Math.ceil(count / pageSize));
 
-    return {
+    const result = {
       movies: rawMovies.map(transformMovieData),
       count,
       totalPages,
@@ -128,7 +145,10 @@ export const getPaginatedTrendingMovies = async (page: number = 1, pageSize: num
       hasNext: Boolean(data.next),
       hasPrev: Boolean(data.previous),
     };
+    trendingCache.set(cacheKey, { data: result, expiresAt: Date.now() + 3 * 60 * 1000 });
+    return result;
   } catch (error) {
+    if (cached) return cached.data;
     console.error('Error fetching paginated trending movies:', error);
     return {
       movies: [],
@@ -154,14 +174,22 @@ export const getMovies = async (filters?: SearchFilters): Promise<Movie[]> => {
 };
 
 export const getMovieById = async (id: string): Promise<Movie> => {
+  const cached = movieDetailCache.get(id);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data;
+  }
+
   try {
     const response = await fetch(`${API_BASE_URL}/movies/${id}/`);
     if (!response.ok) {
       throw new Error('Movie not found');
     }
     const backendMovie = await response.json();
-    return transformMovieData(backendMovie);
+    const movie = transformMovieData(backendMovie);
+    movieDetailCache.set(id, { data: movie, expiresAt: Date.now() + 5 * 60 * 1000 });
+    return movie;
   } catch (error) {
+    if (cached) return cached.data;
     console.error('Error fetching movie:', error);
     throw error;
   }

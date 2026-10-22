@@ -1,4 +1,5 @@
 import { Review, PaginatedResponse } from '../types';
+import { getCinematicPoster, isValidPosterUrl } from './posterService';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
@@ -11,8 +12,13 @@ export const transformRatingToReview = (rating: any): Review => {
   } else if (posterPath && posterPath.startsWith('/')) {
     poster = `https://image.tmdb.org/t/p/w500${posterPath}`;
   } else if (rating.movie_title) {
-    const cached = typeof window !== 'undefined' ? localStorage.getItem(`poster_${rating.movie_title}`) : null;
-    poster = cached || `https://placehold.co/380x560/1f2937/ffffff?text=${encodeURIComponent(rating.movie_title)}`;
+    let cached = null;
+    try {
+      if (typeof window !== 'undefined') {
+        cached = localStorage.getItem(`omdb_poster_${rating.movie_title}`) || localStorage.getItem(`poster_${rating.movie_title}`);
+      }
+    } catch (_) {}
+    poster = (cached && isValidPosterUrl(cached)) ? cached : getCinematicPoster(rating.movie_title);
   }
 
   const username = rating.user_email || rating.username || 'Anonymous';

@@ -23,6 +23,7 @@ import { getUserReviews } from '../services/reviewService';
 import { getMovieById } from '../services/movieService';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import StarRating from '../components/common/StarRating';
+import { getCinematicPoster } from '../services/posterService';
 
 const ProfilePage: React.FC = () => {
   const { user, logout, updateProfile } = useAuth();
@@ -317,7 +318,7 @@ const ProfilePage: React.FC = () => {
                   {userReviews.slice(0, 3).map((review) => {
                     const movie = userMovies.find(m => m.id === review.movieId);
                     const title = movie?.title || review.movieTitle || 'Movie';
-                    const poster = movie?.poster || review.moviePoster || `https://placehold.co/380x560/1f2937/ffffff?text=${encodeURIComponent(title)}`;
+                    const poster = movie?.poster || review.moviePoster || getCinematicPoster(title);
                     return (
                       <div key={review.id} className="border-b border-gray-700 pb-4 last:border-b-0">
                         <Link to={`/movie/${review.movieId}`} className="flex items-center gap-3 mb-2 hover:opacity-85 transition-opacity">
@@ -327,9 +328,7 @@ const ProfilePage: React.FC = () => {
                             className="w-12 h-16 object-cover rounded shadow"
                             onError={(e) => {
                               const target = e.currentTarget;
-                              if (!target.src.includes('placehold.co')) {
-                                target.src = `https://placehold.co/380x560/1f2937/ffffff?text=${encodeURIComponent(title)}`;
-                              }
+                              target.src = getCinematicPoster(title);
                             }}
                           />
                           <div className="flex-1 min-w-0">
@@ -384,7 +383,7 @@ const ProfilePage: React.FC = () => {
               userReviews.map((review) => {
                 const movie = userMovies.find(m => m.id === review.movieId);
                 const title = movie?.title || review.movieTitle || 'Movie';
-                const poster = movie?.poster || review.moviePoster || `https://placehold.co/380x560/1f2937/ffffff?text=${encodeURIComponent(title)}`;
+                const poster = movie?.poster || review.moviePoster || getCinematicPoster(title);
                 return (
                   <div key={review.id} className="bg-gray-800 rounded-lg p-6">
                     <div className="flex items-start gap-4">
@@ -395,9 +394,7 @@ const ProfilePage: React.FC = () => {
                           className="w-20 h-28 object-cover rounded shadow hover:opacity-85 transition-opacity"
                           onError={(e) => {
                             const target = e.currentTarget;
-                            if (!target.src.includes('placehold.co')) {
-                              target.src = `https://placehold.co/380x560/1f2937/ffffff?text=${encodeURIComponent(title)}`;
-                            }
+                            target.src = getCinematicPoster(title);
                           }}
                         />
                       </Link>
@@ -447,14 +444,12 @@ const ProfilePage: React.FC = () => {
                 >
                   <div className="relative h-80">
                     <img
-                      src={movie.poster}
+                      src={movie.poster || getCinematicPoster(movie.title)}
                       alt={movie.title}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         const target = e.currentTarget;
-                        if (!target.src.includes('placehold.co')) {
-                          target.src = `https://placehold.co/380x560/1f2937/ffffff?text=${encodeURIComponent(movie.title)}`;
-                        }
+                        target.src = getCinematicPoster(movie.title);
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

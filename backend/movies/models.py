@@ -51,6 +51,12 @@ class Movie(models.Model):
         ordering = ['-popularity', '-release_year']
         verbose_name = _("Movie")
         verbose_name_plural = _("Movies")
+        indexes = [
+            models.Index(fields=['-popularity', '-release_year']),
+            models.Index(fields=['-vote_average']),
+            models.Index(fields=['release_year']),
+            models.Index(fields=['title']),
+        ]
 
     def __str__(self):
         return f"{self.title} ({self.release_year or 'N/A'})"

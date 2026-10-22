@@ -39,6 +39,11 @@ class Rating(models.Model):
         ordering = ['-updated_at']
         verbose_name = "Rating"
         verbose_name_plural = "Ratings"
+        indexes = [
+            models.Index(fields=['movie', '-created_at']),
+            models.Index(fields=['user', '-created_at']),
+            models.Index(fields=['-updated_at']),
+        ]
 
     def __str__(self):
         return f"{self.user.email} rated {self.movie.title} with {self.score}"

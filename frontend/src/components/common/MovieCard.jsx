@@ -1,15 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Star, Play, Film } from 'lucide-react';
+import { Heart, Star, Play } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { getInitialPoster, resolvePoster, isValidPosterUrl } from '../../services/posterService';
 
 const MovieCard = ({ movie, size = 'md', showInfo = true }) => {
   const { addToWatchlist, removeFromWatchlist, watchlist } = useApp();
   const { t } = useLanguage();
   const isInWatchlist = watchlist.includes(movie.id);
-  const [imageError, setImageError] = useState(false);
-  const [currentPoster, setCurrentPoster] = useState(movie.poster || '');
+  const [currentPoster, setCurrentPoster] = useState(() => getInitialPoster(movie));
+
+  // Dynamically resolve real poster from cache or OMDB if not already a valid photo
+  useEffect(() => {
+    let isMounted = true;
+    if (!isValidPosterUrl(currentPoster)) {
+      resolvePoster(movie).then((url) => {
+        if (isMounted && url && url !== currentPoster) {
+          setCurrentPoster(url);
+        }
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [movie.id, movie.title, movie.poster]);
 
   // Width classes based on size; height is handled by aspect-[2/3]
   const sizeClasses = {
@@ -34,28 +49,11 @@ const MovieCard = ({ movie, size = 'md', showInfo = true }) => {
     : '';
 
   const handleImageError = () => {
-    if (!imageError && movie.title) {
-      setImageError(true);
-      // Try local storage cache first
-      try {
-        const cached = localStorage.getItem(`poster_${movie.title}`);
-        if (cached && cached !== currentPoster) {
-          setCurrentPoster(cached);
-          return;
-        }
-      } catch (_) {}
-
-      // Fallback: fetch from OMDB
-      fetch(`https://www.omdbapi.com/?t=${encodeURIComponent(movie.title)}&apikey=trilogy`)
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.Response === 'True' && data.Poster && data.Poster.startsWith('http')) {
-            setCurrentPoster(data.Poster);
-            try { localStorage.setItem(`poster_${movie.title}`, data.Poster); } catch (_) {}
-          }
-        })
-        .catch(() => {});
-    }
+    resolvePoster(movie).then((url) => {
+      if (url && url !== currentPoster) {
+        setCurrentPoster(url);
+      }
+    });
   };
 
   return (
@@ -63,15 +61,7 @@ const MovieCard = ({ movie, size = 'md', showInfo = true }) => {
       <Link to={`/movie/${movie.id}`} className="block w-full">
         <div className="relative w-full aspect-[2/3] bg-gradient-to-b from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-800/80 group-hover:border-red-500/50 group-hover:shadow-[0_8px_25px_rgba(0,0,0,0.6)] transition-all duration-300">
           
-          {/* Subtle placeholder icon shown behind or on error */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center text-gray-500">
-            <Film className="w-10 h-10 mb-2 opacity-30 text-gray-400" />
-            <span className="text-xs text-gray-400 font-medium line-clamp-2 px-1 opacity-70">
-              {movie.title}
-            </span>
-          </div>
-
-          {/* Poster image */}
+          {/* Authentic poster or high-res cinematic artwork */}
           {currentPoster && (
             <img
               src={currentPoster}

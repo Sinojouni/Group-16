@@ -1,4 +1,5 @@
 import { Movie } from '../types';
+import { getCinematicPoster, isValidPosterUrl } from './posterService';
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
@@ -16,15 +17,21 @@ export const transformMovieData = (backendMovie: any): Movie => {
     posterUrl = `https://image.tmdb.org/t/p/w500${backendMovie.poster_path}`;
     backdropUrl = `https://image.tmdb.org/t/p/w1280${backendMovie.poster_path}`;
   } else {
-    // Fallback: check localStorage cache or clean placeholder
+    // Fallback: check localStorage cache or cinematic artwork
     const title = backendMovie.title || 'Movie';
-    const cached = typeof window !== 'undefined' ? localStorage.getItem(`poster_${title}`) : null;
-    if (cached) {
+    let cached = null;
+    try {
+      if (typeof window !== 'undefined') {
+        cached = localStorage.getItem(`omdb_poster_${title}`) || localStorage.getItem(`poster_${title}`);
+      }
+    } catch (_) {}
+
+    if (cached && isValidPosterUrl(cached)) {
       posterUrl = cached;
       backdropUrl = cached;
     } else {
-      posterUrl = `https://placehold.co/380x560/1f2937/ffffff?text=${encodeURIComponent(title)}`;
-      backdropUrl = `https://placehold.co/1280x720/1f2937/ffffff?text=${encodeURIComponent(title)}`;
+      posterUrl = getCinematicPoster(title, backendMovie.genres, backendMovie.release_year);
+      backdropUrl = posterUrl;
     }
   }
 

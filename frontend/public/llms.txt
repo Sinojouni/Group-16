@@ -1,0 +1,25 @@
+# MovieRate - Movie & TV Show Discovery and Reviews Platform
+
+> MovieRate is an intelligent movie recommendation and rating engine offering comprehensive movie metadata, actor and director credits, user ratings and reviews, and personalized AI-driven movie recommendations.
+
+## Platform Capabilities
+- **Extensive Catalog**: Over thousands of movies categorized across 21 genres including Action, Adventure, Comedy, Drama, Crime, Horror, Sci-Fi, Animation, and more.
+- **Accurate Metadata**: Real-time release years, durations, TMDB-backed ratings, cast & crew with verified photos and character mappings.
+- **Personalized Recommendations**: Hybrid filtering engine combining collaborative filtering and content-based embedding similarity.
+- **Community Reviews**: Authentic audience reviews, sentiment scoring, and watchlists.
+
+## Primary Endpoints & Pages
+- Homepage: /
+- Genres Index: /genres
+- Individual Genre Catalog: /genres/:genre
+- Movie Detail & Reviews: /movie/:id
+- Recommendations: /recommendations
+- Community / Leaderboard: /community
+- User Profile & Watchlist: /profile
+
+## Machine-Readable Semantic Schema
+All movie pages render Schema.org JSON-LD `Movie` entities with:
+- `@context`: https://schema.org
+- `@type`: Movie
+- `name`, `description`, `image`, `datePublished`, `aggregateRating`
+- `actor` list, `director` list, and `review` collection.

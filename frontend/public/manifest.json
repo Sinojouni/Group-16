@@ -1,0 +1,21 @@
+{
+  "name": "MovieRate - Movies & TV Reviews",
+  "short_name": "MovieRate",
+  "description": "The ultimate destination for movie discovery, AI recommendations, and verified community reviews.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#111827",
+  "theme_color": "#dc2626",
+  "lang": "ar",
+  "dir": "rtl",
+  "categories": ["entertainment", "movies", "social"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

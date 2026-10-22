@@ -13,37 +13,60 @@ class MoviePagination(PageNumberPagination):
     max_page_size = 100
 
 class MovieViewSet(viewsets.ModelViewSet):
-    queryset = Movie.objects.all()
+    """
+    Optimized Movie ViewSet supporting high concurrency and millions of requests.
+    Uses prefetch_related to eliminate N+1 queries and includes edge Cache-Control headers.
+    """
+    queryset = Movie.objects.prefetch_related('genres', 'cast', 'directors', 'keywords').all()
     serializer_class = MovieSerializer
-    permission_classes = [AllowAny]  # Allow public access to movies
+    permission_classes = [AllowAny]
     pagination_class = MoviePagination
+
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        # Enable caching at CDN/edge/browser level (2 minutes fresh, 10 minutes stale-while-revalidate)
+        response['Cache-Control'] = 'public, max-age=120, stale-while-revalidate=600'
+        return response
+
+    def retrieve(self, request, *args, **kwargs):
+        response = super().retrieve(request, *args, **kwargs)
+        # Cache specific movie details for 5 minutes
+        response['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=1200'
+        return response
 
     @action(detail=False, methods=['get'])
     def search(self, request):
-        query = request.query_params.get('q', '')
+        query = request.query_params.get('q', '').strip()
+        queryset = self.get_queryset()
         if query:
-            movies = Movie.objects.filter(
+            queryset = queryset.filter(
                 Q(title__icontains=query) | 
                 Q(overview__icontains=query)
             )
-        else:
-            movies = Movie.objects.all()
         
-        page = self.paginate_queryset(movies)
+        page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+            response = self.get_paginated_response(serializer.data)
+            response['Cache-Control'] = 'public, max-age=60, stale-while-revalidate=300'
+            return response
 
-        serializer = self.get_serializer(movies, many=True)
-        return Response(serializer.data)
+        serializer = self.get_serializer(queryset[:24], many=True)
+        response = Response(serializer.data)
+        response['Cache-Control'] = 'public, max-age=60, stale-while-revalidate=300'
+        return response
 
     @action(detail=False, methods=['get'])
     def trending(self, request):
-        movies = Movie.objects.all()
-        page = self.paginate_queryset(movies)
+        queryset = self.get_queryset()
+        page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+            response = self.get_paginated_response(serializer.data)
+            response['Cache-Control'] = 'public, max-age=180, stale-while-revalidate=600'
+            return response
 
-        serializer = self.get_serializer(movies[:24], many=True)
-        return Response(serializer.data)
+        serializer = self.get_serializer(queryset[:24], many=True)
+        response = Response(serializer.data)
+        response['Cache-Control'] = 'public, max-age=180, stale-while-revalidate=600'
+        return response

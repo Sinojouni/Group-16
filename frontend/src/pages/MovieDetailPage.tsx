@@ -11,6 +11,9 @@ import { getMovieById } from '../services/movieService';
 import { getReviews, addReview as addReviewService } from '../services/reviewService';
 import { getUserRating, rateMovie } from '../services/ratingService';
 import { getActorPhoto } from '../services/actorService';
+import MovieSEO from '../components/common/MovieSEO';
+import { resolvePoster, isValidPosterUrl, getCinematicPoster } from '../services/posterService';
+import AuthPromptModal from '../components/common/AuthPromptModal';
 
 // Real Actor Card with authentic high-res photo and smooth fallback
 const ActorCard: React.FC<{ name: string; character?: string }> = ({ name, character }) => {
@@ -64,7 +67,7 @@ const ActorCard: React.FC<{ name: string; character?: string }> = ({ name, chara
 
 const MovieDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { token } = useAuth();
   const [movie, setMovie] = useState<Movie | null>(null);
   const [posterSrc, setPosterSrc] = useState<string>('');
@@ -72,6 +75,7 @@ const MovieDetailPage: React.FC = () => {
   const [userRating, setUserRating] = useState(0);
   const [userReview, setUserReview] = useState<Review | null>(null);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [reviewComment, setReviewComment] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -91,6 +95,15 @@ const MovieDetailPage: React.FC = () => {
         const initialBackdrop = movieData.backdrop || movieData.poster || '';
         setPosterSrc(initialPoster);
         setBackdropSrc(initialBackdrop);
+
+        if (!isValidPosterUrl(initialPoster)) {
+          resolvePoster(movieData).then((resolved) => {
+            if (resolved) {
+              setPosterSrc(resolved);
+              setBackdropSrc(resolved);
+            }
+          });
+        }
         
         // Load reviews for this movie
         try {
@@ -121,32 +134,12 @@ const MovieDetailPage: React.FC = () => {
   // Fallback OMDB fetcher if poster or backdrop link fails
   const handleImageError = () => {
     if (!movie || !movie.title) return;
-
-    // Check localStorage cache first
-    try {
-      const cached = localStorage.getItem(`poster_${movie.title}`);
-      if (cached && cached !== posterSrc) {
-        setPosterSrc(cached);
-        setBackdropSrc(cached);
-        return;
+    resolvePoster(movie).then((resolved) => {
+      if (resolved && resolved !== posterSrc) {
+        setPosterSrc(resolved);
+        setBackdropSrc(resolved);
       }
-    } catch (_) {}
-
-    // Fetch live from OMDB
-    const query = encodeURIComponent(movie.title);
-    const yearParam = movie.releaseYear ? `&y=${movie.releaseYear}` : '';
-    fetch(`https://www.omdbapi.com/?t=${query}${yearParam}&apikey=trilogy`)
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.Response === 'True' && data.Poster && data.Poster.startsWith('http')) {
-          setPosterSrc(data.Poster);
-          setBackdropSrc(data.Poster);
-          try {
-            localStorage.setItem(`poster_${movie.title}`, data.Poster);
-          } catch (_) {}
-        }
-      })
-      .catch(() => {});
+    });
   };
 
   const handleAddReview = async () => {
@@ -200,6 +193,9 @@ const MovieDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-900">
+      {/* Dynamic SEO & AI GEO Engine for Movie */}
+      <MovieSEO movie={movie} reviews={reviews} language={language} />
+
       {/* Hero Section */}
       <div className="relative min-h-[520px] md:h-[68vh] overflow-hidden flex items-end">
         {/* Ambient Blur Backdrop */}
@@ -285,7 +281,7 @@ const MovieDetailPage: React.FC = () => {
 
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
                 <button
-                  onClick={() => token ? setShowReviewModal(true) : alert('يرجى تسجيل الدخول لتقييم هذا الفيلم')}
+                  onClick={() => token ? setShowReviewModal(true) : setShowAuthModal(true)}
                   className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg shadow-red-600/30 transition-all duration-200 flex items-center gap-2"
                 >
                   <Star className="w-4 h-4 fill-current" />
@@ -459,7 +455,7 @@ const MovieDetailPage: React.FC = () => {
                 </div>
                 
                 {/* User Rating Section */}
-                {token && (
+                {token ? (
                   <div className="pt-5 mt-4 border-t border-gray-800">
                     <span className="text-gray-300 font-semibold block mb-2">{t('yourRating')}:</span>
                     <StarRating
@@ -468,6 +464,21 @@ const MovieDetailPage: React.FC = () => {
                       size="md"
                       className="justify-start"
                     />
+                  </div>
+                ) : (
+                  <div className="pt-5 mt-4 border-t border-gray-800">
+                    <span className="text-gray-300 font-semibold block mb-2">{t('yourRating')}:</span>
+                    <div onClick={() => setShowAuthModal(true)} className="cursor-pointer inline-flex items-center gap-2 group" title={language === 'ar' ? 'سجل الدخول لتقييم الفيلم' : 'Sign in to rate'}>
+                      <StarRating
+                        rating={0}
+                        onRatingChange={() => setShowAuthModal(true)}
+                        size="md"
+                        className="justify-start opacity-70 group-hover:opacity-100 transition-opacity"
+                      />
+                      <span className="text-xs text-gray-400 group-hover:text-red-400 transition-colors">
+                        ({language === 'ar' ? 'سجل الدخول للتقييم' : 'Sign in to rate'})
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -526,6 +537,13 @@ const MovieDetailPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Auth Prompt Modal for Guests */}
+      <AuthPromptModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        actionType="review"
+      />
     </div>
   );
 };
