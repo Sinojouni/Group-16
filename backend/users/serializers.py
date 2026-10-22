@@ -13,8 +13,14 @@ User = get_user_model()
 class UserSerializer(serializers.ModelSerializer):
     """
     Serializer for the User model.
-    Used for retrieving user details.
+    Used for retrieving and updating user details.
     """
+    firstName = serializers.CharField(source='first_name', required=False, allow_blank=True)
+    lastName = serializers.CharField(source='last_name', required=False, allow_blank=True)
+    isAdmin = serializers.BooleanField(source='is_staff', read_only=True)
+    isVerified = serializers.BooleanField(source='is_email_verified', read_only=True)
+    dateJoined = serializers.DateTimeField(source='created_at', read_only=True)
+
     class Meta:
         model = User
         fields = (
@@ -23,11 +29,21 @@ class UserSerializer(serializers.ModelSerializer):
             "username",
             "first_name",
             "last_name",
+            "firstName",
+            "lastName",
+            "isAdmin",
+            "isVerified",
+            "dateJoined",
             "is_email_verified",
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "is_email_verified", "created_at", "updated_at")
+        read_only_fields = ("id", "isAdmin", "isVerified", "dateJoined", "is_email_verified", "created_at", "updated_at")
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['avatar'] = f"https://ui-avatars.com/api/?name={instance.username or instance.email}&background=dc2626&color=fff&size=120"
+        return data
 
 
 class UserCreateSerializer(serializers.ModelSerializer):

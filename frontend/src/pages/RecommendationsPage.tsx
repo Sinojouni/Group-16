@@ -1,102 +1,61 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useApp } from '../contexts/AppContext';
-import { getRecommendations } from '../services/recommendationService';
+import { getPublicRecommendations, getRecommendations } from '../services/recommendationService';
 import { Movie } from '../types';
 import MovieCard from '../components/common/MovieCard';
-import { Star, TrendingUp, Film, AlertCircle, RefreshCw } from 'lucide-react';
+import { Star, TrendingUp, Sparkles, RefreshCw, Cpu, Award } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 
-const RecommendationsPage = () => {
+const RecommendationsPage: React.FC = () => {
   const { t } = useLanguage();
   const { user, token } = useAuth();
-  const { movies } = useApp();
   const navigate = useNavigate();
-  const [recommendedMovies, setRecommendedMovies] = useState([]);
+  const [recommendedMovies, setRecommendedMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [isPersonalized, setIsPersonalized] = useState(false);
 
-  useEffect(() => {
-    const fetchRecommendations = async () => {
-      if (!token) {
-        setError('You must be logged in to view recommendations');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        const recommendations = await getRecommendations(token);
-        setRecommendedMovies(recommendations);
-
-        // If recommendations is empty, don't show it as an error
-        if (recommendations.length === 0) {
-          setError(null);
-        }
-      } catch (err) {
-        console.error('Error fetching recommendations:', err);
-        // Don't show error for empty array (already handled in service)
-        if (err.message !== 'Failed to fetch recommendations') {
-          setError(err.message || 'Failed to load recommendations');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecommendations();
-  }, [token]);
-
-  const handleRetry = async () => {
-    if (!token) return;
-    
+  const fetchRecommendations = async () => {
     try {
       setLoading(true);
-      setError(null);
-      const recommendations = await getRecommendations(token);
-      setRecommendedMovies(recommendations);
 
-      // If recommendations is empty, don't show it as an error
-      if (recommendations.length === 0) {
-        setError(null);
+      // If user has token, check if they have personal recommendations
+      if (token) {
+        try {
+          const personal = await getRecommendations(token);
+          if (personal && personal.length > 0) {
+            setRecommendedMovies(personal);
+            setIsPersonalized(true);
+            setLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.log('Personal recommendation fallback to AI engine:', e);
+        }
       }
+
+      // Fallback: AI model public recommendations
+      const aiRecs = await getPublicRecommendations(token);
+      setRecommendedMovies(aiRecs);
+      setIsPersonalized(false);
     } catch (err) {
-      console.error('Error fetching recommendations:', err);
-      // Don't show error for empty array (already handled in service)
-      if (err.message !== 'Failed to fetch recommendations') {
-        setError(err.message || 'Failed to load recommendations');
-      }
+      console.error('Error in RecommendationsPage:', err);
+      setRecommendedMovies([]);
     } finally {
       setLoading(false);
     }
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
-        <div className="text-center max-w-md p-6 bg-gray-800 rounded-lg">
-          <TrendingUp className="w-16 h-16 text-red-600 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-white mb-4">{t('loginRequired')}</h2>
-          <p className="text-gray-300 mb-6">{t('loginToSeeRecommendations')}</p>
-          <button
-            onClick={() => navigate('/login')}
-            className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-md transition-colors duration-200"
-          >
-            {t('login')}
-          </button>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    fetchRecommendations();
+  }, [token]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
-          <p className="text-white">{t('loadingRecommendations')}</p>
+          <p className="text-white font-medium">{t('loadingRecommendations')}</p>
         </div>
       </div>
     );
@@ -105,80 +64,89 @@ const RecommendationsPage = () => {
   return (
     <div className="min-h-screen bg-gray-900 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-3 mb-8">
-          <TrendingUp className="w-8 h-8 text-red-600" />
-          <h1 className="text-3xl font-bold text-white">{t('personalizedRecommendations')}</h1>
+        
+        {/* Page Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-gray-800">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <Sparkles className="w-8 h-8 text-red-500" />
+              <h1 className="text-3xl font-black text-white tracking-tight">
+                {isPersonalized ? 'توصيات مخصصة لك' : 'توصيات الذكاء الاصطناعي'}
+              </h1>
+            </div>
+            <p className="text-gray-400 text-sm">
+              {isPersonalized 
+                ? 'تم إنشاء هذه التوصيات بناءً على تقييماتك وتفضيلاتك الشخصية عبر نموذج Two-Tower العصبي.'
+                : 'توصيات ذكية مدعومة بنموذج تعلم الآلة (PyTorch Two-Tower Recommendation Model).'}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchRecommendations}
+              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-2 rounded-xl text-sm font-medium border border-gray-700 transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              <span>{t('refresh')}</span>
+            </button>
+          </div>
         </div>
 
-        {error ? (
-          <div className="bg-red-900/30 border border-red-700 rounded-lg p-6 text-center">
-            <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-white mb-2">{t('recommendationError')}</h3>
-            <p className="text-red-200 mb-4">{error}</p>
-            {error.includes('rate at least 5 movies') ? (
-              <div className="mt-4">
-                <p className="text-red-200 mb-4">{t('rateMoreMovies')}</p>
-                <button
-                  onClick={() => navigate('/trending')}
-                  className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-md transition-colors duration-200"
-                >
-                  {t('browseMovies')}
-                </button>
+        {/* Informational Banner */}
+        {!isPersonalized && (
+          <div className="mb-8 p-4 rounded-2xl bg-gray-800/80 border border-red-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-600/20 border border-red-500/30 flex items-center justify-center text-red-400 flex-shrink-0">
+                <Cpu className="w-5 h-5" />
               </div>
+              <div>
+                <h4 className="text-white font-bold text-sm">توصيات نموذج الذكاء الاصطناعي الفعالة</h4>
+                <p className="text-gray-400 text-xs">
+                  {!user 
+                    ? 'سجّل الدخول وقيّم 5 أفلام لتفعيل التوصيات المخصصة بالكامل لحسابك.' 
+                    : 'قم بتقييم 5 أفلام على الأقل ليتم تدريب النموذج المخصص على ذوقك الشخصي.'}
+                </p>
+              </div>
+            </div>
+            {!user ? (
+              <button
+                onClick={() => navigate('/login')}
+                className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
+              >
+                تسجيل الدخول الآن
+              </button>
             ) : (
               <button
-                onClick={handleRetry}
-                className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-md transition-colors duration-200 flex items-center gap-2 mx-auto"
+                onClick={() => navigate('/genres')}
+                className="bg-gray-800 hover:bg-gray-700 text-white text-xs font-bold px-4 py-2 rounded-lg border border-gray-700 transition-colors whitespace-nowrap"
               >
-                <RefreshCw className="w-4 h-4" />
-                {t('tryAgain')}
+                استكشف وقيّم الأفلام
               </button>
             )}
           </div>
-        ) : recommendedMovies.length > 0 ? (
-          <div>
-            <div className="flex items-center justify-between mb-6">
-              <p className="text-gray-400">
-                {t('basedOnYourRatings', { count: recommendedMovies.length })}
-              </p>
-              <button
-                onClick={handleRetry}
-                className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors duration-200"
-              >
-                <RefreshCw className="w-4 h-4" />
-                {t('refresh')}
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {recommendedMovies.map((movie) => (
-                <MovieCard key={movie.id} movie={movie} />
-              ))}
-            </div>
+        )}
+
+        {/* Movies Grid */}
+        {recommendedMovies.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5">
+            {recommendedMovies.map((movie) => (
+              <MovieCard key={movie.id} movie={movie} size="md" />
+            ))}
           </div>
         ) : (
-          <div className="bg-gray-800 rounded-lg p-8 text-center">
-            <Star className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-12 text-center max-w-lg mx-auto">
+            <Star className="w-16 h-16 text-yellow-500 mx-auto mb-4 opacity-50" />
             <h3 className="text-xl font-bold text-white mb-2">{t('noRecommendationsYet')}</h3>
-            <p className="text-gray-300 mb-6">{t('rateSomeMoviesForRecommendations')}</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={() => navigate('/trending')}
-                className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-6 rounded-md transition-colors duration-200 flex items-center gap-2"
-              >
-                <Film className="w-4 h-4" />
-                {t('browseMovies')}
-              </button>
-              <button
-                onClick={() => navigate('/genres')}
-                className="bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-6 rounded-md transition-colors duration-200 flex items-center gap-2"
-              >
-                <TrendingUp className="w-4 h-4" />
-                {t('exploreGenres')}
-              </button>
-            </div>
+            <p className="text-gray-400 text-sm mb-6">{t('rateSomeMoviesForRecommendations')}</p>
+            <button
+              onClick={() => navigate('/')}
+              className="bg-red-600 hover:bg-red-700 text-white font-medium py-2.5 px-6 rounded-xl transition-colors inline-flex items-center gap-2"
+            >
+              العودة للرئيسية
+            </button>
           </div>
         )}
+
       </div>
     </div>
   );

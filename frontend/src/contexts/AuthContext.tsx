@@ -56,15 +56,25 @@ const authReducer = (state: AuthState, action: AuthAction): AuthState => {
   }
 };
 
-const initialState: AuthState = {
-  user: null,
-  token: localStorage.getItem('token'),
-  isAuthenticated: false,
-  isLoading: false,
+const getInitialState = (): AuthState => {
+  const token = localStorage.getItem('token');
+  const userStr = localStorage.getItem('user');
+  let user: User | null = null;
+  if (userStr) {
+    try {
+      user = JSON.parse(userStr);
+    } catch (_) {}
+  }
+  return {
+    user,
+    token,
+    isAuthenticated: Boolean(token),
+    isLoading: Boolean(token && !user),
+  };
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(authReducer, initialState);
+  const [state, dispatch] = useReducer(authReducer, getInitialState());
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -75,11 +85,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const validateToken = async (token: string) => {
     try {
-      dispatch({ type: 'AUTH_START' });
       const user = await authService.validateToken(token);
       dispatch({ type: 'AUTH_SUCCESS', payload: { user, token } });
     } catch (error) {
       localStorage.removeItem('token');
+      localStorage.removeItem('user');
       dispatch({ type: 'AUTH_FAILURE', payload: 'Invalid token' });
     }
   };
@@ -89,9 +99,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       dispatch({ type: 'AUTH_START' });
       const response = await authService.login(credentials);
       
-      if (credentials.rememberMe) {
-        localStorage.setItem('token', response.token);
-      }
+      localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
       
       dispatch({ type: 'AUTH_SUCCESS', payload: response });
       toast.success('Welcome back!');
@@ -107,6 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await authService.register(credentials);
       
       localStorage.setItem('token', response.token);
+      localStorage.setItem('user', JSON.stringify(response.user));
       dispatch({ type: 'AUTH_SUCCESS', payload: response });
       toast.success('Account created successfully!');
     } catch (error: any) {
@@ -117,6 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     dispatch({ type: 'LOGOUT' });
     toast.success('Logged out successfully');
   };

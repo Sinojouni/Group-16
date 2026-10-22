@@ -22,6 +22,18 @@ const SettingsPage: React.FC = () => {
     bio: user?.bio || '',
   });
 
+  React.useEffect(() => {
+    if (user) {
+      setProfileData({
+        username: user.username || '',
+        email: user.email || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        bio: user.bio || '',
+      });
+    }
+  }, [user]);
+
 
   // Privacy Settings
   const [privacySettings, setPrivacySettings] = useState({

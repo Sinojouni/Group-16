@@ -57,3 +57,36 @@ class RecommendationView(APIView):
 
         serializer = MovieSerializer(ordered_movies, many=True)
         return Response(serializer.data)
+
+class PublicRecommendationView(APIView):
+    permission_classes = []
+
+    def get(self, request):
+        sample_ratings = [
+            {"movie_id": 211672, "score": 5.0},
+            {"movie_id": 281338, "score": 4.5},
+            {"movie_id": 271110, "score": 4.0},
+            {"movie_id": 680, "score": 5.0},
+            {"movie_id": 166426, "score": 3.5}
+        ]
+        try:
+            response = requests.post(
+                settings.MODEL_SERVICE_URL,
+                json={"ratings": sample_ratings},
+                timeout=5
+            )
+            if response.status_code == 200:
+                recommended_movie_ids = response.json().get("recommendations", [])
+                recommended_movies = Movie.objects.filter(tmdb_id__in=recommended_movie_ids)
+                movies_dict = {str(movie.tmdb_id): movie for movie in recommended_movies}
+                ordered_movies = [movies_dict[str(tmdb_id)] for tmdb_id in recommended_movie_ids if str(tmdb_id) in movies_dict]
+                if ordered_movies:
+                    serializer = MovieSerializer(ordered_movies, many=True)
+                    return Response(serializer.data)
+        except Exception:
+            pass
+
+        # Fallback to popular movies
+        top_movies = Movie.objects.order_by('-popularity')[:10]
+        serializer = MovieSerializer(top_movies, many=True)
+        return Response(serializer.data)

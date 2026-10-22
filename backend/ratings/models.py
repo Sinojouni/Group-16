@@ -25,6 +25,11 @@ class Rating(models.Model):
         validators=[MinValueValidator(0.5), MaxValueValidator(5.0)],
         help_text="The score given by the user (0.5 to 5.0)."
     )
+    comment = models.TextField(
+        blank=True,
+        default="",
+        help_text="Optional text comment or review for the movie."
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -1,16 +1,19 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Star, Play } from 'lucide-react';
+import { Heart, Star, Play, Film } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 
 const MovieCard = ({ movie, size = 'md', showInfo = true }) => {
   const { addToWatchlist, removeFromWatchlist, watchlist } = useApp();
   const isInWatchlist = watchlist.includes(movie.id);
+  const [imageError, setImageError] = useState(false);
+  const [currentPoster, setCurrentPoster] = useState(movie.poster || '');
 
+  // Width classes based on size; height is handled by aspect-[2/3]
   const sizeClasses = {
-    sm: 'w-28 h-42',
-    md: 'w-36 h-54',
-    lg: 'w-44 h-66',
+    sm: 'w-28 sm:w-32',
+    md: 'w-full',
+    lg: 'w-44 sm:w-52',
   };
 
   const handleWatchlistToggle = (e) => {
@@ -24,47 +27,74 @@ const MovieCard = ({ movie, size = 'md', showInfo = true }) => {
   };
 
   // Format genres to show up to 2 genres
-  const displayGenres = movie.genres.slice(0, 2).join(', ');
+  const displayGenres = Array.isArray(movie.genres) 
+    ? movie.genres.slice(0, 2).join(', ') 
+    : '';
+
+  const handleImageError = () => {
+    if (!imageError && movie.title) {
+      setImageError(true);
+      // Try local storage cache first
+      try {
+        const cached = localStorage.getItem(`poster_${movie.title}`);
+        if (cached && cached !== currentPoster) {
+          setCurrentPoster(cached);
+          return;
+        }
+      } catch (_) {}
+
+      // Fallback: fetch from OMDB
+      fetch(`https://www.omdbapi.com/?t=${encodeURIComponent(movie.title)}&apikey=trilogy`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.Response === 'True' && data.Poster && data.Poster.startsWith('http')) {
+            setCurrentPoster(data.Poster);
+            try { localStorage.setItem(`poster_${movie.title}`, data.Poster); } catch (_) {}
+          }
+        })
+        .catch(() => {});
+    }
+  };
 
   return (
-    <div className="group relative overflow-hidden rounded-md transition-all duration-300 hover:scale-105 hover:shadow-lg">
-      <Link to={`/movie/${movie.id}`} className="block">
-        <div className={`relative ${sizeClasses[size]}`}>
-          <img
-            src={movie.poster}
-            alt={movie.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-            onError={(e) => {
-              const target = e.target;
-              // First try to use movie title as a fallback
-              if (movie.title && movie.title.trim() !== '') {
-                target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(movie.title)}&background=1a202c&color=fff&size=300&bold=true&length=2`;
-              } else {
-                target.src = 'https://placehold.co/300x450/1a202c/FFFFFF?text=No+Image';
-              }
-            }}
-          />
+    <div className={`group relative flex flex-col ${sizeClasses[size] || 'w-full'} transition-all duration-300 hover:-translate-y-1`}>
+      <Link to={`/movie/${movie.id}`} className="block w-full">
+        <div className="relative w-full aspect-[2/3] bg-gradient-to-b from-gray-800 to-gray-900 rounded-xl overflow-hidden shadow-lg border border-gray-800/80 group-hover:border-red-500/50 group-hover:shadow-[0_8px_25px_rgba(0,0,0,0.6)] transition-all duration-300">
           
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-            <div className="flex items-center gap-2">
+          {/* Subtle placeholder icon shown behind or on error */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-3 text-center text-gray-500">
+            <Film className="w-10 h-10 mb-2 opacity-30 text-gray-400" />
+            <span className="text-xs text-gray-400 font-medium line-clamp-2 px-1 opacity-70">
+              {movie.title}
+            </span>
+          </div>
+
+          {/* Poster image */}
+          {currentPoster && (
+            <img
+              src={currentPoster}
+              alt={movie.title}
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+              onError={handleImageError}
+            />
+          )}
+
+          {/* Dark gradient overlay on hover */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+            <div className="flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
               {/* Play Button */}
-              <button
-                className="bg-white bg-opacity-20 backdrop-blur-sm rounded-full p-2 hover:bg-opacity-30 transition-all duration-200"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  window.location.href = `/movie/${movie.id}`;
-                }}
+              <div
+                className="bg-red-600/90 text-white rounded-full p-2.5 shadow-lg hover:bg-red-600 hover:scale-110 transition-all duration-200"
               >
-                <Play className="w-5 h-5 text-white fill-current" />
-              </button>
+                <Play className="w-4 h-4 fill-current ml-0.5" />
+              </div>
               
               {/* Watchlist Button */}
               <button
                 onClick={handleWatchlistToggle}
-                className="bg-white bg-opacity-20 backdrop-blur-sm rounded-full p-1.5 hover:bg-opacity-30 transition-all duration-200"
+                className="bg-black/60 backdrop-blur-md border border-white/20 rounded-full p-2 hover:bg-black/80 transition-all duration-200"
+                title={isInWatchlist ? 'إزالة من المفضلة' : 'إضافة إلى المفضلة'}
               >
                 {isInWatchlist ? (
                   <Heart className="w-4 h-4 text-red-500 fill-current" />
@@ -76,23 +106,23 @@ const MovieCard = ({ movie, size = 'md', showInfo = true }) => {
           </div>
 
           {/* Rating badge */}
-          <div className="absolute top-1.5 right-1.5 bg-black bg-opacity-80 backdrop-blur-sm rounded-full px-2 py-0.5 flex items-center gap-1">
+          <div className="absolute top-2 right-2 bg-black/75 backdrop-blur-md border border-white/10 rounded-full px-2 py-0.5 flex items-center gap-1 shadow-md z-10">
             <Star className="w-3 h-3 text-yellow-400 fill-current" />
-            <span className="text-white text-xs">
-              {movie.averageRating.toFixed(1)}
+            <span className="text-white text-xs font-semibold">
+              {(movie.averageRating || 0).toFixed(1)}
             </span>
           </div>
 
           {/* Trending badge */}
           {movie.isTrending && (
-            <div className="absolute top-1.5 left-1.5 bg-red-600 text-white text-xs px-2 py-0.5 rounded-full">
+            <div className="absolute top-2 left-2 bg-gradient-to-r from-red-600 to-rose-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md z-10">
               رائج
             </div>
           )}
           
           {/* Featured badge */}
-          {movie.isFeatured && (
-            <div className="absolute bottom-1.5 left-1.5 bg-yellow-600 text-white text-xs px-2 py-0.5 rounded-full">
+          {movie.isFeatured && !movie.isTrending && (
+            <div className="absolute top-2 left-2 bg-gradient-to-r from-amber-500 to-yellow-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md z-10">
               مميز
             </div>
           )}
@@ -100,20 +130,24 @@ const MovieCard = ({ movie, size = 'md', showInfo = true }) => {
       </Link>
 
       {showInfo && (
-        <div className="p-2.5">
-          <h3 className="text-white font-medium text-sm mb-1 truncate" title={movie.title}>
-            {movie.title}
-          </h3>
-          <p className="text-gray-400 text-xs mb-1.5 truncate" title={`${movie.releaseYear} • ${displayGenres}`}>
-            {movie.releaseYear} • {displayGenres}
-          </p>
-          <div className="flex items-center gap-1.5">
-            <div className="flex items-center gap-1">
-              <Star className="w-3 h-3 text-yellow-400 fill-current" />
-              <span className="text-gray-400 text-xs">
-                {movie.averageRating.toFixed(1)} ({movie.totalRatings})
+        <div className="pt-2.5 px-0.5">
+          <Link to={`/movie/${movie.id}`}>
+            <h3 
+              className="text-white font-semibold text-sm leading-snug truncate group-hover:text-red-400 transition-colors" 
+              title={movie.title}
+            >
+              {movie.title}
+            </h3>
+          </Link>
+          <div className="flex items-center justify-between text-xs text-gray-400 mt-1">
+            <span className="truncate max-w-[70%]">
+              {movie.releaseYear || ''} {displayGenres ? `• ${displayGenres}` : ''}
+            </span>
+            {movie.totalRatings > 0 && (
+              <span className="text-gray-500 text-[11px]">
+                ({movie.totalRatings})
               </span>
-            </div>
+            )}
           </div>
         </div>
       )}

@@ -41,6 +41,18 @@ const ProfilePage: React.FC = () => {
   });
 
   useEffect(() => {
+    if (user) {
+      setEditForm({
+        username: user.username || '',
+        email: user.email || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        bio: user.bio || ''
+      });
+    }
+  }, [user]);
+
+  useEffect(() => {
     // Simulate API call to get user's data
     setTimeout(() => {
       // Get user's rated movies
@@ -101,9 +113,16 @@ const ProfilePage: React.FC = () => {
 
             {/* User Info */}
             <div className="flex-1">
-              <div className="flex items-center gap-4 mb-4">
-                <h1 className="text-3xl font-bold text-white">{user?.username}</h1>
-                <span className="bg-green-600 text-white px-3 py-1 rounded-full text-sm font-medium">
+              <div className="flex flex-wrap items-center gap-3 mb-3">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                  {user?.firstName || user?.lastName 
+                    ? `${user?.firstName || ''} ${user?.lastName || ''}`.trim() 
+                    : user?.username}
+                </h1>
+                {user?.username && (
+                  <span className="text-gray-400 text-sm font-medium">@{user.username}</span>
+                )}
+                <span className="bg-green-600/20 border border-green-500/30 text-green-400 px-3 py-0.5 rounded-full text-xs font-semibold">
                   {t('activeMember')}
                 </span>
               </div>
@@ -115,7 +134,7 @@ const ProfilePage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2 text-gray-300">
                   <Calendar className="w-4 h-4" />
-                  <span>{t('joinedOn')} {user?.dateJoined}</span>
+                  <span>{t('joinedOn')} {user?.dateJoined ? new Date(user.dateJoined).toLocaleDateString() : ''}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-300">
                   <Star className="w-4 h-4" />
@@ -404,44 +423,71 @@ const ProfilePage: React.FC = () => {
 
       {/* Edit Profile Modal */}
       {isEditing && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-xl font-bold text-white mb-4">تعديل الملف الشخصي</h3>
+        <div className="fixed inset-0 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 sm:p-8 w-full max-w-lg shadow-2xl">
+            <h3 className="text-xl font-bold text-white mb-5">{t('editProfile') || 'تعديل الملف الشخصي'}</h3>
             
             <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                    الاسم الأول
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.firstName}
+                    onChange={(e) => setEditForm({...editForm, firstName: e.target.value})}
+                    placeholder="الاسم الأول"
+                    className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl p-3 focus:outline-none focus:border-red-500 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-300 mb-1.5">
+                    اسم العائلة
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.lastName}
+                    onChange={(e) => setEditForm({...editForm, lastName: e.target.value})}
+                    placeholder="اسم العائلة"
+                    className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl p-3 focus:outline-none focus:border-red-500 text-sm"
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-xs font-medium text-gray-300 mb-1.5">
                   اسم المستخدم
                 </label>
                 <input
                   type="text"
                   value={editForm.username}
                   onChange={(e) => setEditForm({...editForm, username: e.target.value})}
-                  className="w-full bg-gray-700 text-white rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-red-600"
+                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl p-3 focus:outline-none focus:border-red-500 text-sm"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-xs font-medium text-gray-300 mb-1.5">
                   البريد الإلكتروني
                 </label>
                 <input
                   type="email"
                   value={editForm.email}
-                  onChange={(e) => setEditForm({...editForm, email: e.target.value})}
-                  className="w-full bg-gray-700 text-white rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-red-600"
+                  disabled
+                  className="w-full bg-gray-800/50 border border-gray-700/60 text-gray-500 rounded-xl p-3 text-sm cursor-not-allowed"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
+                <label className="block text-xs font-medium text-gray-300 mb-1.5">
                   نبذة شخصية
                 </label>
                 <textarea
                   value={editForm.bio}
                   onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
                   rows={3}
-                  className="w-full bg-gray-700 text-white rounded-md p-3 focus:outline-none focus:ring-2 focus:ring-red-600"
+                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl p-3 focus:outline-none focus:border-red-500 text-sm"
                   placeholder="اكتب نبذة عن نفسك..."
                 />
               </div>
@@ -450,15 +496,15 @@ const ProfilePage: React.FC = () => {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={handleEditProfile}
-                className="flex-1 bg-red-600 text-white py-2 px-4 rounded-lg font-semibold hover:bg-red-700 transition-colors duration-200"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 px-4 rounded-xl font-bold transition-colors duration-200"
               >
-                حفظ التغييرات
+                {t('saveChanges') || 'حفظ التغييرات'}
               </button>
               <button
                 onClick={() => setIsEditing(false)}
-                className="flex-1 bg-gray-700 text-white py-2 px-4 rounded-lg font-semibold hover:bg-gray-600 transition-colors duration-200"
+                className="flex-1 bg-gray-800 hover:bg-gray-700 text-white py-2.5 px-4 rounded-xl font-bold border border-gray-700 transition-colors duration-200"
               >
-                إلغاء
+                {t('cancel') || 'إلغاء'}
               </button>
             </div>
           </div>

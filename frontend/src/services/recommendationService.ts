@@ -3,25 +3,28 @@ import { Movie } from '../types';
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
 // Helper function to transform backend movie data to frontend format
-const transformMovieData = (backendMovie: any): Movie => {
-  // Construct poster and backdrop URLs from tmdb_id if available
-  let posterUrl = 'https://placehold.co/300x450/1a202c/FFFFFF?text=No+Image';
-  let backdropUrl = 'https://placehold.co/1280x720/1a202c/FFFFFF?text=No+Image';
-  
-  // Check if we have a tmdb_id to construct proper image URLs
-  if (backendMovie.tmdb_id) {
-    posterUrl = `https://image.tmdb.org/t/p/w500/${backendMovie.tmdb_id}.jpg`;
-    backdropUrl = `https://image.tmdb.org/t/p/w1280/${backendMovie.tmdb_id}.jpg`;
-  } else if (backendMovie.poster_path) {
-    // Fallback to existing poster_path if tmdb_id is not available
-    if (backendMovie.poster_path.startsWith('/')) {
-      // If poster_path starts with '/', it's a tmdbId-based path
-      posterUrl = `https://image.tmdb.org/t/p/w500${backendMovie.poster_path}`;
-      backdropUrl = `https://image.tmdb.org/t/p/w1280${backendMovie.poster_path}`;
+export const transformMovieData = (backendMovie: any): Movie => {
+  let posterUrl = '';
+  let backdropUrl = '';
+
+  // 1. If backend gave a full URL (from OMDB poster sync)
+  if (backendMovie.poster_path && backendMovie.poster_path.startsWith('http')) {
+    posterUrl = backendMovie.poster_path;
+    backdropUrl = backendMovie.poster_path;
+  } else if (backendMovie.poster_path && backendMovie.poster_path.startsWith('/') && !backendMovie.poster_path.includes(`${backendMovie.tmdb_id}.jpg`)) {
+    // Valid TMDB hash path
+    posterUrl = `https://image.tmdb.org/t/p/w500${backendMovie.poster_path}`;
+    backdropUrl = `https://image.tmdb.org/t/p/w1280${backendMovie.poster_path}`;
+  } else {
+    // Fallback: check localStorage cache or clean placeholder
+    const title = backendMovie.title || 'Movie';
+    const cached = typeof window !== 'undefined' ? localStorage.getItem(`poster_${title}`) : null;
+    if (cached) {
+      posterUrl = cached;
+      backdropUrl = cached;
     } else {
-      // Otherwise, it's a full URL
-      posterUrl = backendMovie.poster_path;
-      backdropUrl = backendMovie.poster_path.replace('/w500/', '/w1280/');
+      posterUrl = `https://placehold.co/380x560/1f2937/ffffff?text=${encodeURIComponent(title)}`;
+      backdropUrl = `https://placehold.co/1280x720/1f2937/ffffff?text=${encodeURIComponent(title)}`;
     }
   }
 
@@ -32,20 +35,20 @@ const transformMovieData = (backendMovie: any): Movie => {
     synopsis: backendMovie.overview,
     releaseYear: backendMovie.release_year,
     runtime: backendMovie.runtime || 0,
-    rating: 'PG-13', // Default rating
+    rating: 'PG-13',
     averageRating: backendMovie.vote_average || 0,
     totalRatings: backendMovie.vote_count || 0,
     poster: posterUrl,
     posterPath: backendMovie.poster_path,
     backdrop: backdropUrl,
     backdropPath: backendMovie.poster_path,
-    genres: backendMovie.genres || [],
+    genres: Array.isArray(backendMovie.genres) ? backendMovie.genres : [],
     isTrending: backendMovie.popularity > 50,
     isFeatured: backendMovie.popularity > 70,
     cast: backendMovie.cast ? backendMovie.cast.map((name: string, index: number) => ({
       id: `cast-${index}`,
       name,
-      character: '', // Backend doesn't provide character info
+      character: '',
       photo: 'https://placehold.co/150x150/1a202c/FFFFFF?text=Actor'
     })) : [],
     crew: backendMovie.directors ? backendMovie.directors.map((name: string, index: number) => ({
@@ -75,7 +78,6 @@ export const getRecommendations = async (token: string): Promise<Movie[]> => {
         const errorData = await response.json();
         throw new Error(errorData.detail || 'You need to rate at least 5 movies to get recommendations.');
       } else if (response.status === 401) {
-        // Return empty array for unauthorized requests instead of throwing an error
         console.log('User not authenticated, returning empty recommendations');
         return [];
       } else if (response.status === 503) {
@@ -86,14 +88,32 @@ export const getRecommendations = async (token: string): Promise<Movie[]> => {
     }
 
     const data = await response.json();
-    
-    // Transform backend data to frontend format using the existing movie service function
-    const transformedMovies = data.map((backendMovie: any) => transformMovieData(backendMovie));
-
-    return transformedMovies;
+    const list = Array.isArray(data) ? data : (data.results || []);
+    return list.map((backendMovie: any) => transformMovieData(backendMovie));
   } catch (error) {
     console.error('Error fetching recommendations:', error);
-    // Instead of throwing error, return empty array to prevent app crashes
     return [];
   }
+};
+
+// Get recommendations for homepage / featured view (uses Two-Tower AI model service)
+export const getPublicRecommendations = async (token?: string): Promise<Movie[]> => {
+  try {
+    if (token) {
+      const personal = await getRecommendations(token);
+      if (personal && personal.length > 0) {
+        return personal;
+      }
+    }
+
+    const response = await fetch(`${API_BASE_URL}/recommendations/`);
+    if (response.ok) {
+      const data = await response.json();
+      const list = Array.isArray(data) ? data : (data.results || []);
+      return list.map((backendMovie: any) => transformMovieData(backendMovie));
+    }
+  } catch (error) {
+    console.error('Error fetching public AI recommendations:', error);
+  }
+  return [];
 };

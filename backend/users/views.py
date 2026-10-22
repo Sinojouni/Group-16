@@ -48,3 +48,27 @@ class UserViewSet(viewsets.ModelViewSet):
                 'user': UserSerializer(user).data
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @action(detail=False, methods=['get', 'put', 'patch'])
+    def me(self, request):
+        if not request.user or not request.user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        if request.method in ['PUT', 'PATCH']:
+            data = request.data.copy()
+            if 'firstName' in data and 'first_name' not in data:
+                data['first_name'] = data['firstName']
+            if 'lastName' in data and 'last_name' not in data:
+                data['last_name'] = data['lastName']
+            
+            serializer = UserSerializer(request.user, data=data, partial=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(UserSerializer(request.user).data)
+
+    @action(detail=False, methods=['get', 'put', 'patch'])
+    def profile(self, request):
+        return self.me(request)

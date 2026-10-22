@@ -1,83 +1,156 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight } from 'lucide-react';
+import { 
+  ChevronRight, 
+  Flame, 
+  Laugh, 
+  Theater, 
+  Ghost, 
+  Rocket, 
+  Heart, 
+  Zap, 
+  ShieldAlert, 
+  Compass, 
+  Sparkles, 
+  Palette, 
+  Video,
+  Layers
+} from 'lucide-react';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getAllGenres } from '../../services/movieService';
 
-interface GenreData {
+interface GenreItem {
   name: string;
   nameAr: string;
-  count: number;
-  color: string;
+  Icon: React.ElementType;
+  iconBox: string;
+  glow: string;
 }
 
-const GenreBrowser = () => {
+const genreMetaMap: { [key: string]: { nameAr: string; Icon: React.ElementType; iconBox: string; glow: string } } = {
+  'Action': {
+    nameAr: 'أكشن',
+    Icon: Flame,
+    iconBox: 'bg-red-500/10 text-red-500 border-red-500/20 group-hover:bg-red-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]',
+    glow: 'group-hover:border-red-500/50'
+  },
+  'Comedy': {
+    nameAr: 'كوميديا',
+    Icon: Laugh,
+    iconBox: 'bg-amber-500/10 text-amber-400 border-amber-500/20 group-hover:bg-amber-500 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(245,158,11,0.4)]',
+    glow: 'group-hover:border-amber-500/50'
+  },
+  'Drama': {
+    nameAr: 'دراما',
+    Icon: Theater,
+    iconBox: 'bg-blue-500/10 text-blue-400 border-blue-500/20 group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]',
+    glow: 'group-hover:border-blue-500/50'
+  },
+  'Horror': {
+    nameAr: 'رعب',
+    Icon: Ghost,
+    iconBox: 'bg-purple-500/10 text-purple-400 border-purple-500/20 group-hover:bg-purple-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]',
+    glow: 'group-hover:border-purple-500/50'
+  },
+  'Science Fiction': {
+    nameAr: 'خيال علمي',
+    Icon: Rocket,
+    iconBox: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20 group-hover:bg-cyan-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(6,182,212,0.4)]',
+    glow: 'group-hover:border-cyan-500/50'
+  },
+  'Romance': {
+    nameAr: 'رومانسي',
+    Icon: Heart,
+    iconBox: 'bg-pink-500/10 text-pink-400 border-pink-500/20 group-hover:bg-pink-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(236,72,153,0.4)]',
+    glow: 'group-hover:border-pink-500/50'
+  },
+  'Thriller': {
+    nameAr: 'إثارة',
+    Icon: Zap,
+    iconBox: 'bg-orange-500/10 text-orange-400 border-orange-500/20 group-hover:bg-orange-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(249,115,22,0.4)]',
+    glow: 'group-hover:border-orange-500/50'
+  },
+  'Crime': {
+    nameAr: 'جريمة',
+    Icon: ShieldAlert,
+    iconBox: 'bg-rose-500/10 text-rose-400 border-rose-500/20 group-hover:bg-rose-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(244,63,94,0.4)]',
+    glow: 'group-hover:border-rose-500/50'
+  },
+  'Adventure': {
+    nameAr: 'مغامرة',
+    Icon: Compass,
+    iconBox: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 group-hover:bg-emerald-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(16,185,129,0.4)]',
+    glow: 'group-hover:border-emerald-500/50'
+  },
+  'Fantasy': {
+    nameAr: 'فانتازيا',
+    Icon: Sparkles,
+    iconBox: 'bg-violet-500/10 text-violet-400 border-violet-500/20 group-hover:bg-violet-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(139,92,246,0.4)]',
+    glow: 'group-hover:border-violet-500/50'
+  },
+  'Animation': {
+    nameAr: 'رسوم متحركة',
+    Icon: Palette,
+    iconBox: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20 group-hover:bg-indigo-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(99,102,241,0.4)]',
+    glow: 'group-hover:border-indigo-500/50'
+  },
+  'Documentary': {
+    nameAr: 'وثائقي',
+    Icon: Video,
+    iconBox: 'bg-teal-500/10 text-teal-400 border-teal-500/20 group-hover:bg-teal-600 group-hover:text-white group-hover:shadow-[0_0_20px_rgba(20,184,166,0.4)]',
+    glow: 'group-hover:border-teal-500/50'
+  }
+};
+
+const defaultGenresList: string[] = [
+  'Action', 'Comedy', 'Drama', 'Horror', 'Science Fiction', 'Romance',
+  'Thriller', 'Crime', 'Adventure', 'Fantasy', 'Animation', 'Documentary'
+];
+
+const GenreBrowser: React.FC = () => {
   const { t } = useLanguage();
-  const [genres, setGenres] = useState([] as GenreData[]);
+  const [genres, setGenres] = useState<GenreItem[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Predefined genre colors for consistent styling
-  const genreColors = [
-    'from-red-600 to-red-800',
-    'from-yellow-600 to-yellow-800',
-    'from-blue-600 to-blue-800',
-    'from-purple-600 to-purple-800',
-    'from-green-600 to-green-800',
-    'from-pink-600 to-pink-800',
-    'from-indigo-600 to-indigo-800',
-    'from-teal-600 to-teal-800',
-    'from-orange-600 to-orange-800',
-    'from-cyan-600 to-cyan-800',
-  ];
-
-  // Map English genre names to Arabic translations
-  const genreTranslations: { [key: string]: string } = {
-    'Action': 'أكشن',
-    'Comedy': 'كوميديا',
-    'Drama': 'دراما',
-    'Horror': 'رعب',
-    'Science Fiction': 'خيال علمي',
-    'Romance': 'رومانسي',
-    'Thriller': 'إثارة',
-    'Crime': 'جريمة',
-    'Adventure': 'مغامرة',
-    'Fantasy': 'فانتازيا',
-    'Animation': 'رسوم متحركة',
-    'Family': 'عائلي',
-    'Mystery': 'غموض',
-    'War': 'حرب',
-    'Documentary': 'وثائقي',
-    'Music': 'موسيقى',
-    'Western': 'غربي',
-    'History': 'تاريخي',
-  };
 
   useEffect(() => {
     const fetchGenres = async () => {
       try {
         setLoading(true);
         const allGenres = await getAllGenres();
-        
-        // Transform genres to match the expected format
-        const transformedGenres = allGenres.slice(0, 12).map((genre, index) => ({
-          name: genre,
-          nameAr: genreTranslations[genre] || genre,
-          count: Math.floor(Math.random() * 300) + 50, // Simulated count
-          color: genreColors[index % genreColors.length],
-        }));
-        
-        setGenres(transformedGenres);
+        const displayList = allGenres.length > 0 
+          ? allGenres.filter(g => genreMetaMap[g]).slice(0, 12)
+          : defaultGenresList;
+
+        const transformed: GenreItem[] = displayList.map(name => {
+          const meta = genreMetaMap[name] || {
+            nameAr: name,
+            Icon: Layers,
+            iconBox: 'bg-red-500/10 text-red-400 border-red-500/20 group-hover:bg-red-600 group-hover:text-white',
+            glow: 'group-hover:border-red-500/50'
+          };
+          return {
+            name,
+            nameAr: meta.nameAr,
+            Icon: meta.Icon,
+            iconBox: meta.iconBox,
+            glow: meta.glow
+          };
+        });
+
+        setGenres(transformed);
       } catch (error) {
-        console.error('Error fetching genres:', error);
-        // Fallback to hardcoded genres if API fails
-        setGenres([
-          { name: 'Action', nameAr: 'أكشن', count: 245, color: 'from-red-600 to-red-800' },
-          { name: 'Comedy', nameAr: 'كوميديا', count: 189, color: 'from-yellow-600 to-yellow-800' },
-          { name: 'Drama', nameAr: 'دراما', count: 312, color: 'from-blue-600 to-blue-800' },
-          { name: 'Horror', nameAr: 'رعب', count: 156, color: 'from-purple-600 to-purple-800' },
-          { name: 'Science Fiction', nameAr: 'خيال علمي', count: 198, color: 'from-green-600 to-green-800' },
-          { name: 'Romance', nameAr: 'رومانسي', count: 167, color: 'from-pink-600 to-pink-800' },
-        ]);
+        console.error('Error in GenreBrowser fetch:', error);
+        const fallback: GenreItem[] = defaultGenresList.map(name => {
+          const meta = genreMetaMap[name];
+          return {
+            name,
+            nameAr: meta.nameAr,
+            Icon: meta.Icon,
+            iconBox: meta.iconBox,
+            glow: meta.glow
+          };
+        });
+        setGenres(fallback);
       } finally {
         setLoading(false);
       }
@@ -88,11 +161,11 @@ const GenreBrowser = () => {
 
   if (loading) {
     return (
-      <div className="mb-12">
-        <h2 className="text-3xl font-bold text-white mb-8 text-center">{t('browseByGenre')}</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="mb-14">
+        <h2 className="text-2xl sm:text-3xl font-black text-white mb-8 text-center">{t('browseByGenre')}</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4">
           {[...Array(6)].map((_, index) => (
-            <div key={index} className="h-32 bg-gray-800 rounded-lg animate-pulse"></div>
+            <div key={index} className="h-32 bg-gray-900/60 rounded-2xl animate-pulse border border-gray-800"></div>
           ))}
         </div>
       </div>
@@ -100,30 +173,46 @@ const GenreBrowser = () => {
   }
 
   return (
-    <div className="mb-12">
-      <h2 className="text-3xl font-bold text-white mb-8 text-center">{t('browseByGenre')}</h2>
+    <section className="mb-14">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">{t('browseByGenre')}</h2>
+          <p className="text-gray-400 text-xs sm:text-sm mt-1">تصفح الأفلام حسب تصنيفك المفضل</p>
+        </div>
+        <Link 
+          to="/genres" 
+          className="text-xs sm:text-sm text-red-400 hover:text-red-300 font-semibold flex items-center gap-1 transition-colors"
+        >
+          <span>عرض الكل</span>
+          <ChevronRight className="w-4 h-4 rtl:rotate-180" />
+        </Link>
+      </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {genres.map((genre) => (
-          <Link
-            key={genre.name}
-            to={`/genre/${encodeURIComponent(genre.name)}`}
-            className="group relative overflow-hidden rounded-lg h-32 hover:scale-105 transition-all duration-300"
-          >
-            <div className={`absolute inset-0 bg-gradient-to-br ${genre.color} opacity-90`} />
-            
-            <div className="relative h-full flex flex-col justify-between p-4">
-              <div>
-                <h3 className="text-white font-bold text-lg mb-1">{genre.nameAr}</h3>
-                <p className="text-white text-sm opacity-90">{genre.count} {t('movie')}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5 sm:gap-4">
+        {genres.map((genre) => {
+          const IconComponent = genre.Icon;
+          return (
+            <Link
+              key={genre.name}
+              to={`/genre/${encodeURIComponent(genre.name)}`}
+              className={`group relative text-center rounded-2xl p-4 sm:p-5 transition-all duration-300 border backdrop-blur-md flex flex-col items-center justify-between border-gray-800/80 bg-gradient-to-b from-gray-900/90 via-gray-800/60 to-gray-900/90 hover:bg-gray-800/70 hover:-translate-y-1 hover:shadow-xl ${genre.glow}`}
+            >
+              {/* Sleek Vector Icon (Zero Emojis) */}
+              <div className={`w-13 h-13 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center border transition-all duration-300 mx-auto mb-3 ${genre.iconBox}`}>
+                <IconComponent className="w-6 h-6 sm:w-7 sm:h-7 transition-transform duration-300 group-hover:scale-110" />
               </div>
               
-              <ChevronRight className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 self-end" />
-            </div>
-          </Link>
-        ))}
+              <h3 className="text-white font-bold text-sm sm:text-base mb-0.5 tracking-wide group-hover:text-white transition-colors">
+                {genre.nameAr}
+              </h3>
+              <p className="text-gray-400 text-[11px] font-medium uppercase tracking-wider">
+                {genre.name}
+              </p>
+            </Link>
+          );
+        })}
       </div>
-    </div>
+    </section>
   );
 };
 
